@@ -1,0 +1,278 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum UserRole {
+  CLIENT
+  ADJUSTER
+  SUPERVISOR
+  ADMIN
+}
+
+enum ClaimStatus {
+  FNOL_RECEIVED
+  DOCUMENTS_PENDING
+  DOCUMENTS_UNDER_REVIEW
+  AI_PROCESSING
+  COVERAGE_VERIFIED
+  ASSESSMENT_COMPLETE
+  FRAUD_REVIEW
+  PENDING_ADJUSTER_DECISION
+  PENDING_ADDITIONAL_INFO
+  APPROVED
+  DENIED
+  SETTLED
+  CLOSED
+}
+
+enum IncidentType {
+  AUTO_COLLISION
+  AUTO_THEFT
+  PROPERTY_DAMAGE
+  PERSONAL_INJURY
+  MEDICAL
+  NATURAL_DISASTER
+  LIABILITY
+}
+
+enum DocumentType {
+  MEDICAL_RECORD
+  POLICE_REPORT
+  DAMAGE_PHOTO
+  REPAIR_ESTIMATE
+  INVOICE
+  DRIVERS_LICENSE
+  INSURANCE_CARD
+  WITNESS_STATEMENT
+  OTHER
+}
+
+enum ExtractionStatus {
+  PENDING
+  PROCESSING
+  COMPLETE
+  FAILED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum DamageSeverity {
+  MINOR
+  MODERATE
+  SEVERE
+  TOTAL_LOSS
+}
+
+enum FraudRecommendation {
+  APPROVE
+  FLAG_FOR_REVIEW
+  ESCALATE_SIU
+}
+
+// ─────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String
+  role         UserRole   @default(ADJUSTER)
+  passwordHash String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  assignedClaims Claim[]      @relation("AdjusterClaims")
+  auditEvents    AuditEvent[]
+  policy         Policy?      @relation("PolicyClient")
+
+  @@map("users")
+}
+
+model Policy {
+  id             String   @id @default(cuid())
+  policyNumber   String   @unique
+  holderName     String
+  holderEmail    String
+  coverageType   String
+  coverageLimit  Decimal  @db.Decimal(12, 2)
+  deductible     Decimal  @db.Decimal(12, 2)
+  effectiveDate  DateTime
+  expiryDate     DateTime
+  rawData        Json     @default("{}")
+  createdAt      DateTime @default(now())
+
+  clientId String? @unique
+  client   User?   @relation("PolicyClient", fields: [clientId], references: [id])
+
+  claims Claim[]
+
+  @@map("policies")
+}
+
+model Claim {
+  id                  String      @id @default(cuid())
+  claimNumber         String      @unique
+  status              ClaimStatus @default(FNOL_RECEIVED)
+  incidentDate        DateTime
+  incidentType        IncidentType
+  incidentDescription String
+  lossAmount          Decimal?    @db.Decimal(12, 2)
+  adjusterNotes       String?
+
+  policyId   String
+  policy     Policy  @relation(fields: [policyId], references: [id])
+  adjusterId String?
+  adjuster   User?   @relation("AdjusterClaims", fields: [adjusterId], references: [id])
+
+  documents               Document[]
+  aiAssessment            AIAssessment?
+  fraudAnalysis           FraudAnalysis?
+  settlementRecommendation SettlementRecommendation?
+  auditEvents             AuditEvent[]
+  payments                Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("claims")
+}
+
+model Document {
+  id             String          @id @default(cuid())
+  claimId        String
+  claim          Claim           @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  type           DocumentType
+  originalName   String
+  storageKey     String
+  mimeType       String
+  sizeBytes      Int
+  uploadedById   String
+
+  extractionStatus     ExtractionStatus @default(PENDING)
+  extractedData        Json?
+  extractionConfidence Float?
+  extractionError      String?
+
+  createdAt DateTime @default(now())
+
+  @@map("documents")
+}
+
+model AIAssessment {
+  id      String @id @default(cuid())
+  claimId String @unique
+  claim   Claim  @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  damageSeverity       DamageSeverity
+  estimatedRepairCost  Decimal?       @db.Decimal(12, 2)
+  damageCategories     Json           @default("[]")
+  comparableClaims     Json           @default("[]")
+  coverageApplicable   Boolean
+  coverageReason       String
+  applicableEndorsements Json         @default("[]")
+  overallConfidence    Float
+  processingTimeMs     Int
+  modelVersions        Json           @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ai_assessments")
+}
+
+model FraudAnalysis {
+  id      String @id @default(cuid())
+  claimId String @unique
+  claim   Claim  @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  riskScore      Float
+  riskLevel      RiskLevel
+  signals        Json              @default("[]")
+  anomalies      Json              @default("[]")
+  networkLinks   Json?
+  recommendation FraudRecommendation
+  confidence     Float
+
+  reviewedById  String?
+  reviewOutcome String?
+  reviewNotes   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("fraud_analyses")
+}
+
+model SettlementRecommendation {
+  id      String @id @default(cuid())
+  claimId String @unique
+  claim   Claim  @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  recommendedAmount Decimal @db.Decimal(12, 2)
+  rangeLow          Decimal @db.Decimal(12, 2)
+  rangeHigh         Decimal @db.Decimal(12, 2)
+  methodology       String
+  comparableCount   Int
+  marketDataSource  String  @default("internal")
+  confidence        Float
+
+  adjusterDecision  Decimal? @db.Decimal(12, 2)
+  adjusterRationale String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settlement_recommendations")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  claimId       String
+  claim         Claim         @relation(fields: [claimId], references: [id])
+  amount        Decimal       @db.Decimal(12, 2)
+  paymentMethod String
+  status        PaymentStatus @default(PENDING)
+  reference     String?
+  processedAt   DateTime?
+  createdAt     DateTime      @default(now())
+
+  @@map("payments")
+}
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  claimId   String
+  claim     Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  actorType String
+  action    String
+  details   Json     @default("{}")
+  timestamp DateTime @default(now())
+
+  @@index([claimId])
+  @@index([timestamp])
+  @@map("audit_events")
+}
