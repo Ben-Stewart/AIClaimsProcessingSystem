@@ -36,7 +36,7 @@ analyticsRouter.get('/dashboard', async (_req: Request, res: Response, next: Nex
       }),
     ]);
 
-    const totalPaidAmount = settledThisMonth.reduce((sum, c) => {
+    const totalPaidAmount = settledThisMonth.reduce((sum: number, c: any) => {
       return sum + Number(c.reimbursementRecommendation?.adjusterDecision ?? 0);
     }, 0);
 
@@ -68,7 +68,7 @@ analyticsRouter.get('/processing-time', async (_req: Request, res: Response, nex
       take: 100,
     });
 
-    const data = settled.map((c) => ({
+    const data = settled.map((c: any) => ({
       date: c.createdAt.toISOString().split('T')[0],
       processingDays: (c.updatedAt.getTime() - c.createdAt.getTime()) / (1000 * 60 * 60 * 24),
       aiProcessingMs: c.aiAssessment?.processingTimeMs ?? null,
@@ -91,7 +91,7 @@ analyticsRouter.get('/ai-performance', async (_req: Request, res: Response, next
     ]);
 
     const fraudByLevel = fraudAnalyses.reduce(
-      (acc, f) => {
+      (acc: Record<string, number>, f: any) => {
         acc[f.riskLevel] = (acc[f.riskLevel] ?? 0) + 1;
         return acc;
       },

@@ -15,7 +15,8 @@ providersRouter.get('/search', async (req: Request, res: Response, next: NextFun
     const { q, type } = req.query;
 
     if (!q || typeof q !== 'string' || q.trim().length < 2) {
-      return res.status(400).json({ error: 'INVALID_QUERY', message: 'Query must be at least 2 characters' });
+      res.status(400).json({ error: 'INVALID_QUERY', message: 'Query must be at least 2 characters' });
+      return;
     }
 
     const response = await openai.chat.completions.create({

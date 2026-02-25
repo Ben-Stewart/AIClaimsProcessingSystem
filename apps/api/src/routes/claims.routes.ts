@@ -9,7 +9,6 @@ import {
   ClaimStatus,
   UserRole,
 } from '@claims/shared';
-import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
@@ -339,7 +338,7 @@ claimsRouter.delete('/:id', authorize(UserRole.ADJUSTER, UserRole.SUPERVISOR, Us
           actorId: req.user!.userId,
           actorType: 'HUMAN',
           action: 'CLAIM_DELETED',
-          details: { claimNumber: claim.claimNumber, status: claim.status } as Prisma.InputJsonValue,
+          details: { claimNumber: claim.claimNumber, status: claim.status } as any,
         },
       }),
       prisma.claim.delete({ where: { id: req.params.id } }),

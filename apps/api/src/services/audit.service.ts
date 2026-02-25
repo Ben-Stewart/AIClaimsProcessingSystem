@@ -1,4 +1,3 @@
-import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
 
 interface CreateAuditEventParams {
@@ -16,7 +15,7 @@ export async function createAuditEvent(params: CreateAuditEventParams) {
       actorId: params.actorId ?? null,
       actorType: params.actorType,
       action: params.action,
-      details: params.details as Prisma.InputJsonValue,
+      details: params.details as any,
     },
   });
 }
