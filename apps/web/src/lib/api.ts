@@ -74,6 +74,12 @@ export const api = {
     return res.json() as Promise<T>;
   },
 
+  delete: async <T>(path: string): Promise<T> => {
+    const res = await fetchWithAuth(path, { method: 'DELETE' });
+    if (!res.ok) throw await res.json();
+    return res.json() as Promise<T>;
+  },
+
   uploadFile: async <T>(path: string, formData: FormData): Promise<T> => {
     const headers: Record<string, string> = {};
     if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;

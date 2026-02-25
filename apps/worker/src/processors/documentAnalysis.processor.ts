@@ -3,13 +3,14 @@ import { DocumentType, ExtractionStatus, WS_EVENTS, QUEUE_NAMES } from '@claims/
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import { analyzeWithAzureDI } from '../services/documentIntelligence.service.js';
-import { analyzeImageWithGPT } from '../services/imageAnalysis.service.js';
+import { analyzeDocumentWithGPT } from '../services/imageAnalysis.service.js';
 import { getPresignedUrl } from '../services/storage.service.js';
 import { emitJobEvent } from '../socket/emitter.js';
 import { Queue } from 'bullmq';
 import { redis } from '../config/redis.js';
+import { env } from '../config/env.js';
 
-const IMAGE_DOCUMENT_TYPES: DocumentType[] = [DocumentType.DAMAGE_PHOTO];
+const IMAGE_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/heic'];
 
 const claimPipelineQueue = new Queue(QUEUE_NAMES.CLAIM_PIPELINE, { connection: redis });
 
@@ -42,8 +43,12 @@ export async function processDocumentAnalysis(job: Job) {
     let extractedData: Record<string, unknown>;
     let confidence: number;
 
-    if (IMAGE_DOCUMENT_TYPES.includes(documentType)) {
-      const result = await analyzeImageWithGPT(fileUrl, documentType, claimId);
+    // Use GPT-4o for images always, and for all types when Azure DI is not configured
+    const isImage = IMAGE_MIME_TYPES.includes(document.mimeType);
+    const useGPT = isImage || !env.AZURE_DI_ENDPOINT;
+
+    if (useGPT) {
+      const result = await analyzeDocumentWithGPT(fileUrl, documentType, claimId);
       extractedData = result.data;
       confidence = result.confidence;
     } else {
@@ -73,7 +78,7 @@ export async function processDocumentAnalysis(job: Job) {
       },
     });
 
-    // Check if all documents for this claim are processed
+    // Trigger claim pipeline when all documents for this claim are processed
     const pendingDocs = await prisma.document.count({
       where: {
         claimId,

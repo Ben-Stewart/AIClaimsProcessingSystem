@@ -1,11 +1,11 @@
 import OpenAI from 'openai';
-import { DamageSeverity } from '@claims/shared';
+import { ClaimSeverity } from '@claims/shared';
 import { prisma } from '../config/database.js';
 import { env } from '../config/env.js';
 
 const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
-export async function runDamageAssessment(claimId: string): Promise<void> {
+export async function runBenefitAssessment(claimId: string): Promise<void> {
   const claim = await prisma.claim.findUnique({
     where: { id: claimId },
     include: {
@@ -27,13 +27,12 @@ export async function runDamageAssessment(claimId: string): Promise<void> {
       {
         role: 'system',
         content:
-          'You are an expert insurance damage assessor. Analyze claim documents and produce a structured damage assessment. Return JSON only.',
+          'You are an expert paramedical and dental benefits assessor. Analyze claim documents and produce a structured benefits assessment. Return JSON only.',
       },
       {
         role: 'user',
-        content: `Claim type: ${claim.incidentType}
-Description: ${claim.incidentDescription}
-Policy coverage limit: $${claim.policy.coverageLimit}
+        content: `Claim type: ${claim.serviceType}
+${claim.serviceDescription ? `Description: ${claim.serviceDescription}\n` : ''}Policy coverage limit: $${claim.policy.coverageLimit}
 Deductible: $${claim.policy.deductible}
 
 Extracted document data:
@@ -41,9 +40,9 @@ ${JSON.stringify(documentSummaries, null, 2)}
 
 Return JSON:
 {
-  "damageSeverity": "MINOR|MODERATE|SEVERE|TOTAL_LOSS",
-  "estimatedRepairCost": number or null,
-  "damageCategories": [{"category": string, "description": string, "confidence": number}],
+  "claimSeverity": "MINOR|MODERATE|SEVERE|CATASTROPHIC",
+  "estimatedTreatmentCost": number or null,
+  "treatmentCategories": [{"category": string, "description": string, "confidence": number}],
   "coverageApplicable": boolean,
   "coverageReason": string,
   "overallConfidence": number between 0 and 1,
@@ -56,9 +55,9 @@ Return JSON:
   });
 
   const result = JSON.parse(response.choices[0]?.message?.content ?? '{}') as {
-    damageSeverity: DamageSeverity;
-    estimatedRepairCost: number | null;
-    damageCategories: Array<{ category: string; description: string; confidence: number }>;
+    claimSeverity: ClaimSeverity;
+    estimatedTreatmentCost: number | null;
+    treatmentCategories: Array<{ category: string; description: string; confidence: number }>;
     coverageApplicable: boolean;
     coverageReason: string;
     overallConfidence: number;
@@ -70,9 +69,9 @@ Return JSON:
     where: { claimId },
     create: {
       claimId,
-      damageSeverity: result.damageSeverity ?? DamageSeverity.MODERATE,
-      estimatedRepairCost: result.estimatedRepairCost,
-      damageCategories: result.damageCategories ?? [],
+      claimSeverity: result.claimSeverity ?? ClaimSeverity.MODERATE,
+      estimatedTreatmentCost: result.estimatedTreatmentCost,
+      treatmentCategories: result.treatmentCategories ?? [],
       comparableClaims: [],
       coverageApplicable: result.coverageApplicable ?? true,
       coverageReason: result.coverageReason ?? 'Coverage determination pending',
@@ -81,9 +80,9 @@ Return JSON:
       modelVersions: { gpt: 'gpt-4o' },
     },
     update: {
-      damageSeverity: result.damageSeverity ?? DamageSeverity.MODERATE,
-      estimatedRepairCost: result.estimatedRepairCost,
-      damageCategories: result.damageCategories ?? [],
+      claimSeverity: result.claimSeverity ?? ClaimSeverity.MODERATE,
+      estimatedTreatmentCost: result.estimatedTreatmentCost,
+      treatmentCategories: result.treatmentCategories ?? [],
       coverageApplicable: result.coverageApplicable ?? true,
       coverageReason: result.coverageReason ?? 'Coverage determination pending',
       overallConfidence: result.overallConfidence ?? 0.8,
@@ -95,10 +94,10 @@ Return JSON:
     data: {
       claimId,
       actorType: 'AI_SYSTEM',
-      action: 'DAMAGE_ASSESSED',
+      action: 'BENEFIT_ASSESSED',
       details: {
-        severity: result.damageSeverity,
-        estimatedCost: result.estimatedRepairCost,
+        severity: result.claimSeverity,
+        estimatedCost: result.estimatedTreatmentCost,
         confidence: result.overallConfidence,
       },
     },

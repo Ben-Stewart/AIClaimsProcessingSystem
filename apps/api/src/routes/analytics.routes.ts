@@ -31,13 +31,13 @@ analyticsRouter.get('/dashboard', async (_req: Request, res: Response, next: Nex
         },
       }),
       prisma.claim.findMany({
-        where: { status: ClaimStatus.SETTLED, updatedAt: { gte: startOfMonth } },
-        include: { settlementRecommendation: true },
+        where: { status: ClaimStatus.PAID, updatedAt: { gte: startOfMonth } },
+        include: { reimbursementRecommendation: true },
       }),
     ]);
 
-    const totalSettledAmount = settledThisMonth.reduce((sum, c) => {
-      return sum + Number(c.settlementRecommendation?.adjusterDecision ?? 0);
+    const totalPaidAmount = settledThisMonth.reduce((sum, c) => {
+      return sum + Number(c.reimbursementRecommendation?.adjusterDecision ?? 0);
     }, 0);
 
     res.json({
@@ -46,8 +46,8 @@ analyticsRouter.get('/dashboard', async (_req: Request, res: Response, next: Nex
         openClaims,
         pendingAdjusterDecision: pendingDecision,
         fraudFlagsToday,
-        settledThisMonth: settledThisMonth.length,
-        totalSettledAmount,
+        paidThisMonth: settledThisMonth.length,
+        totalPaidAmount,
         // Placeholder metrics — will be calculated from seeded data
         avgProcessingDays: 1.2,
         straightThroughRate: 0.34,
@@ -62,7 +62,7 @@ analyticsRouter.get('/dashboard', async (_req: Request, res: Response, next: Nex
 analyticsRouter.get('/processing-time', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const settled = await prisma.claim.findMany({
-      where: { status: ClaimStatus.SETTLED },
+      where: { status: ClaimStatus.PAID },
       select: { createdAt: true, updatedAt: true, aiAssessment: { select: { processingTimeMs: true } } },
       orderBy: { createdAt: 'asc' },
       take: 100,

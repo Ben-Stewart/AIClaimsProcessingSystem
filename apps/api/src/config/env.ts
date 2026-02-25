@@ -24,7 +24,7 @@ const EnvSchema = z.object({
   R2_BUCKET_NAME: z.string().default('claims-documents'),
   R2_PUBLIC_URL: z.string().optional(),
 
-  AUTO_APPROVE_THRESHOLD: z.coerce.number().positive().default(5000),
+  AUTO_APPROVE_THRESHOLD: z.coerce.number().positive().default(500),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

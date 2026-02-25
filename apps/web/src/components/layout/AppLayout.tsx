@@ -1,14 +1,15 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, PlusCircle, BarChart3, LogOut, Shield } from 'lucide-react';
+import { LayoutDashboard, FileText, BarChart3, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
-const navItems = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/claims', label: 'Claims', icon: FileText, end: false },
-  { to: '/claims/new', label: 'New Claim', icon: PlusCircle, end: true },
-  { to: '/analytics', label: 'Analytics', icon: BarChart3, end: true },
-];
+const navLinkClass = (isActive: boolean) =>
+  cn(
+    'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+    isActive
+      ? 'bg-primary text-primary-foreground'
+      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+  );
 
 export function AppLayout() {
   const { user, logout } = useAuth();
@@ -29,24 +30,18 @@ export function AppLayout() {
         </div>
 
         <nav className="flex-1 space-y-1 p-3">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                )
-              }
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </NavLink>
-          ))}
+          <NavLink to="/" end className={({ isActive }) => navLinkClass(isActive)}>
+            <LayoutDashboard className="h-4 w-4" />
+            Dashboard
+          </NavLink>
+          <NavLink to="/claims" className={({ isActive }) => navLinkClass(isActive)}>
+            <FileText className="h-4 w-4" />
+            Claims
+          </NavLink>
+          <NavLink to="/analytics" end className={({ isActive }) => navLinkClass(isActive)}>
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </NavLink>
         </nav>
 
         <div className="border-t p-3">

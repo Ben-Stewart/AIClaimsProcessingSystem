@@ -9,11 +9,11 @@ import { ClaimsListPage } from './pages/ClaimsListPage';
 import { NewClaimPage } from './pages/NewClaimPage';
 import { ClaimDetailPage } from './pages/ClaimDetailPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
-import { ClientLoginPage } from './pages/client/ClientLoginPage';
 import { ClientRegisterPage } from './pages/client/ClientRegisterPage';
 import { ClientDashboardPage } from './pages/client/ClientDashboardPage';
 import { ClientNewClaimPage } from './pages/client/ClientNewClaimPage';
 import { ClientClaimDetailPage } from './pages/client/ClientClaimDetailPage';
+import { ClientPolicyPage } from './pages/client/ClientPolicyPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -26,7 +26,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function ClientProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   if (isLoading) return <div className="flex h-screen items-center justify-center text-muted-foreground">Loading...</div>;
-  if (!user) return <Navigate to="/client/login" replace />;
+  if (!user) return <Navigate to="/login" replace />;
   if (user.role !== UserRole.CLIENT) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
@@ -53,7 +53,6 @@ export default function App() {
       </Route>
 
       {/* Client portal */}
-      <Route path="/client/login" element={<ClientLoginPage />} />
       <Route path="/client/register" element={<ClientRegisterPage />} />
       <Route
         path="/client"
@@ -66,6 +65,7 @@ export default function App() {
         <Route index element={<ClientDashboardPage />} />
         <Route path="claims/new" element={<ClientNewClaimPage />} />
         <Route path="claims/:id" element={<ClientClaimDetailPage />} />
+        <Route path="policy" element={<ClientPolicyPage />} />
       </Route>
     </Routes>
   );

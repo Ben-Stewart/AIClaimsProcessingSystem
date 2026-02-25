@@ -7,7 +7,7 @@ const connection = redis;
 export const documentAnalysisQueue = new Queue(QUEUE_NAMES.DOCUMENT_ANALYSIS, { connection });
 export const claimPipelineQueue = new Queue(QUEUE_NAMES.CLAIM_PIPELINE, { connection });
 export const fraudDetectionQueue = new Queue(QUEUE_NAMES.FRAUD_DETECTION, { connection });
-export const settlementQueue = new Queue(QUEUE_NAMES.SETTLEMENT_CALCULATION, { connection });
+export const reimbursementQueue = new Queue(QUEUE_NAMES.REIMBURSEMENT_CALCULATION, { connection });
 
 export async function enqueueDocumentAnalysis(
   documentId: string,

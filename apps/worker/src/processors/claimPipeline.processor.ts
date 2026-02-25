@@ -4,8 +4,8 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import { emitJobEvent } from '../socket/emitter.js';
 import { runFraudDetection } from '../services/fraudDetection.service.js';
-import { runDamageAssessment } from '../services/damageAssessment.service.js';
-import { runSettlementCalculation } from '../services/settlementPrediction.service.js';
+import { runBenefitAssessment } from '../services/benefitAssessment.service.js';
+import { runReimbursementCalculation } from '../services/reimbursementCalculation.service.js';
 
 export async function processClaimPipeline(job: Job) {
   const { claimId } = job.data as { claimId: string };
@@ -18,40 +18,40 @@ export async function processClaimPipeline(job: Job) {
   });
 
   try {
-    // Stage 1: Run fraud detection, coverage verification, and damage assessment in parallel
+    // Stage 1: Run fraud detection and benefit assessment in parallel
     await job.updateProgress(10);
     emitJobEvent(claimId, WS_EVENTS.AI_JOB_PROGRESS, { jobId: job.id!, claimId, progress: 10, stage: 'Verifying coverage' });
 
     await Promise.all([
       runFraudDetection(claimId),
-      runDamageAssessment(claimId),
+      runBenefitAssessment(claimId),
     ]);
 
     await job.updateProgress(70);
-    emitJobEvent(claimId, WS_EVENTS.AI_JOB_PROGRESS, { jobId: job.id!, claimId, progress: 70, stage: 'Calculating settlement' });
+    emitJobEvent(claimId, WS_EVENTS.AI_JOB_PROGRESS, { jobId: job.id!, claimId, progress: 70, stage: 'Calculating reimbursement' });
 
-    // Stage 2: Settlement depends on assessment results
-    await runSettlementCalculation(claimId);
+    // Stage 2: Reimbursement calculation depends on assessment results
+    await runReimbursementCalculation(claimId);
 
     await job.updateProgress(95);
     emitJobEvent(claimId, WS_EVENTS.AI_JOB_PROGRESS, { jobId: job.id!, claimId, progress: 95, stage: 'Finalizing' });
 
-    // Check for auto-approval: LOW fraud risk + settlement under threshold
-    const [fraud, settlement] = await Promise.all([
+    // Check for auto-approval: LOW fraud risk + reimbursement under threshold
+    const [fraud, reimbursement] = await Promise.all([
       prisma.fraudAnalysis.findUnique({ where: { claimId } }),
-      prisma.settlementRecommendation.findUnique({ where: { claimId } }),
+      prisma.reimbursementRecommendation.findUnique({ where: { claimId } }),
     ]);
 
-    const threshold = Number(process.env.AUTO_APPROVE_THRESHOLD ?? 5000);
+    const threshold = Number(process.env.AUTO_APPROVE_THRESHOLD ?? 500);
     const autoApprove =
       fraud?.riskLevel === 'LOW' &&
-      settlement?.recommendedAmount != null &&
-      Number(settlement.recommendedAmount) <= threshold;
+      reimbursement?.recommendedAmount != null &&
+      Number(reimbursement.recommendedAmount) <= threshold;
 
     if (autoApprove) {
       await prisma.claim.update({
         where: { id: claimId },
-        data: { status: ClaimStatus.APPROVED, lossAmount: settlement!.recommendedAmount },
+        data: { status: ClaimStatus.APPROVED, lossAmount: reimbursement!.recommendedAmount },
       });
 
       await prisma.auditEvent.create({
@@ -60,9 +60,9 @@ export async function processClaimPipeline(job: Job) {
           actorType: 'AI_SYSTEM',
           action: 'AUTO_APPROVED',
           details: {
-            reason: 'Low fraud risk and settlement within auto-approve threshold',
+            reason: 'Low fraud risk and reimbursement within auto-approve threshold',
             riskLevel: fraud!.riskLevel,
-            amount: String(settlement!.recommendedAmount),
+            amount: String(reimbursement!.recommendedAmount),
             threshold,
           } as Prisma.InputJsonValue,
         },
@@ -73,7 +73,7 @@ export async function processClaimPipeline(job: Job) {
         jobId: job.id!,
         claimId,
         type: 'claim_pipeline',
-        resultSummary: `Claim automatically approved for $${Number(settlement!.recommendedAmount).toFixed(2)}.`,
+        resultSummary: `Claim automatically approved for $${Number(reimbursement!.recommendedAmount).toFixed(2)}.`,
       });
       return;
     }
@@ -88,7 +88,7 @@ export async function processClaimPipeline(job: Job) {
         claimId,
         actorType: 'AI_SYSTEM',
         action: 'AI_PIPELINE_COMPLETE',
-        details: { stages: ['fraud_detection', 'damage_assessment', 'settlement_calculation'] } as Prisma.InputJsonValue,
+        details: { stages: ['fraud_detection', 'benefit_assessment', 'reimbursement_calculation'] } as Prisma.InputJsonValue,
       },
     });
 

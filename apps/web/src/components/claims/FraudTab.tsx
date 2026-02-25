@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { RiskLevel, FraudRecommendation, type Claim } from '@claims/shared';
+import { RiskLevel, FraudRecommendation, ClaimStatus, type Claim } from '@claims/shared';
 
 const RISK_CONFIG: Record<RiskLevel, { color: string; bg: string; label: string }> = {
   [RiskLevel.LOW]: { color: 'text-green-700', bg: 'bg-green-50 border-green-200', label: 'Low Risk' },
@@ -92,7 +92,8 @@ export function FraudTab({ claim }: { claim: Claim }) {
       )}
 
       {/* Actions */}
-      {fraud.recommendation === FraudRecommendation.ESCALATE_SIU && (
+      {fraud.recommendation === FraudRecommendation.ESCALATE_SIU &&
+       ![ClaimStatus.APPROVED, ClaimStatus.DENIED, ClaimStatus.PAID, ClaimStatus.CLOSED].includes(claim.status) && (
         <button
           onClick={() => escalate.mutate()}
           disabled={escalate.isPending}

@@ -14,29 +14,30 @@ export enum ClaimStatus {
   PENDING_ADDITIONAL_INFO = 'PENDING_ADDITIONAL_INFO',
   APPROVED = 'APPROVED',
   DENIED = 'DENIED',
-  SETTLED = 'SETTLED',
+  PAID = 'PAID',
   CLOSED = 'CLOSED',
 }
 
-export enum IncidentType {
-  AUTO_COLLISION = 'AUTO_COLLISION',
-  AUTO_THEFT = 'AUTO_THEFT',
-  PROPERTY_DAMAGE = 'PROPERTY_DAMAGE',
-  PERSONAL_INJURY = 'PERSONAL_INJURY',
-  MEDICAL = 'MEDICAL',
-  NATURAL_DISASTER = 'NATURAL_DISASTER',
-  LIABILITY = 'LIABILITY',
+export enum ServiceType {
+  PHYSIOTHERAPY = 'PHYSIOTHERAPY',
+  MASSAGE_THERAPY = 'MASSAGE_THERAPY',
+  CHIROPRACTIC = 'CHIROPRACTIC',
+  PSYCHOLOGIST = 'PSYCHOLOGIST',
+  DENTAL_PREVENTIVE = 'DENTAL_PREVENTIVE',
+  DENTAL_RESTORATIVE = 'DENTAL_RESTORATIVE',
+  VISION_CARE = 'VISION_CARE',
 }
 
 export enum DocumentType {
   MEDICAL_RECORD = 'MEDICAL_RECORD',
-  POLICE_REPORT = 'POLICE_REPORT',
-  DAMAGE_PHOTO = 'DAMAGE_PHOTO',
-  REPAIR_ESTIMATE = 'REPAIR_ESTIMATE',
+  REFERRAL_LETTER = 'REFERRAL_LETTER',
+  DENTAL_XRAY = 'DENTAL_XRAY',
+  TREATMENT_PLAN = 'TREATMENT_PLAN',
   INVOICE = 'INVOICE',
-  DRIVERS_LICENSE = 'DRIVERS_LICENSE',
+  EXPLANATION_OF_BENEFITS = 'EXPLANATION_OF_BENEFITS',
   INSURANCE_CARD = 'INSURANCE_CARD',
   WITNESS_STATEMENT = 'WITNESS_STATEMENT',
+  RECEIPT = 'RECEIPT',
   OTHER = 'OTHER',
 }
 
@@ -74,11 +75,11 @@ export enum ClaimComplexity {
   COMPLEX = 'COMPLEX',
 }
 
-export enum DamageSeverity {
+export enum ClaimSeverity {
   MINOR = 'MINOR',
   MODERATE = 'MODERATE',
   SEVERE = 'SEVERE',
-  TOTAL_LOSS = 'TOTAL_LOSS',
+  CATASTROPHIC = 'CATASTROPHIC',
 }
 
 export enum FraudRecommendation {
@@ -102,6 +103,10 @@ export interface User {
     coverageType: string;
     coverageLimit: number;
     deductible: number;
+    percentCovered: number;
+    reasonableAndCustomary: Record<string, number>;
+    effectiveDate: string;
+    expiryDate: string;
   } | null;
 }
 
@@ -113,6 +118,8 @@ export interface Policy {
   coverageType: string;
   coverageLimit: number;
   deductible: number;
+  percentCovered: number;
+  reasonableAndCustomary: Record<string, number>;
   effectiveDate: string;
   expiryDate: string;
 }
@@ -121,10 +128,11 @@ export interface Claim {
   id: string;
   claimNumber: string;
   status: ClaimStatus;
-  incidentDate: string;
-  incidentType: IncidentType;
-  incidentDescription: string;
+  serviceDate: string;
+  serviceType: ServiceType;
+  serviceDescription: string;
   lossAmount: number | null;
+  provider: { name: string; address?: string; phone?: string } | null;
   adjusterNotes: string | null;
   policyId: string;
   policy?: Policy;
@@ -133,7 +141,7 @@ export interface Claim {
   documents?: Document[];
   aiAssessment?: AIAssessment;
   fraudAnalysis?: FraudAnalysis;
-  settlementRecommendation?: SettlementRecommendation;
+  reimbursementRecommendation?: ReimbursementRecommendation;
   createdAt: string;
   updatedAt: string;
 }
@@ -154,9 +162,9 @@ export interface Document {
 export interface AIAssessment {
   id: string;
   claimId: string;
-  damageSeverity: DamageSeverity;
-  estimatedRepairCost: number | null;
-  damageCategories: DamageCategory[];
+  claimSeverity: ClaimSeverity;
+  estimatedTreatmentCost: number | null;
+  treatmentCategories: TreatmentCategory[];
   comparableClaims: ComparableClaim[];
   coverageApplicable: boolean;
   coverageReason: string;
@@ -165,7 +173,7 @@ export interface AIAssessment {
   createdAt: string;
 }
 
-export interface DamageCategory {
+export interface TreatmentCategory {
   category: string;
   description: string;
   confidence: number;
@@ -173,8 +181,8 @@ export interface DamageCategory {
 
 export interface ComparableClaim {
   claimId: string;
-  incidentType: IncidentType;
-  settlementAmount: number;
+  serviceType: ServiceType;
+  reimbursementAmount: number;
   similarity: number;
 }
 
@@ -196,7 +204,7 @@ export interface FraudAnalysis {
   createdAt: string;
 }
 
-export interface SettlementRecommendation {
+export interface ReimbursementRecommendation {
   id: string;
   claimId: string;
   recommendedAmount: number;
@@ -300,6 +308,6 @@ export interface DashboardMetrics {
   straightThroughRate: number;
   fraudFlagsToday: number;
   pendingAdjusterDecision: number;
-  settledThisMonth: number;
-  totalSettledAmount: number;
+  paidThisMonth: number;
+  totalPaidAmount: number;
 }

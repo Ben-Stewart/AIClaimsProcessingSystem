@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ClaimStatus, DocumentType, IncidentType, UserRole } from '../types/index.js';
+import { ClaimStatus, DocumentType, ServiceType, UserRole } from '../types/index.js';
 
 // ─────────────────────────────────────────────
 // Auth
@@ -27,13 +27,20 @@ export type RegisterInput = z.infer<typeof RegisterSchema>;
 
 export const CreateClaimSchema = z.object({
   policyNumber: z.string().min(1, 'Policy number is required'),
-  incidentDate: z.string().datetime({ message: 'Invalid incident date' }),
-  incidentType: z.nativeEnum(IncidentType),
-  incidentDescription: z
+  serviceDate: z
     .string()
-    .min(20, 'Please provide at least 20 characters describing the incident')
-    .max(5000),
-  lossAmount: z.number().positive().optional(),
+    .min(1, 'Service date is required')
+    .refine((v) => !isNaN(new Date(v).getTime()), { message: 'Invalid service date' }),
+  serviceType: z.nativeEnum(ServiceType),
+  serviceDescription: z.string().max(5000).optional(),
+  lossAmount: z.number().positive('Amount paid must be a positive number'),
+  provider: z
+    .object({
+      name: z.string().min(1),
+      address: z.string().optional(),
+      phone: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type CreateClaimInput = z.infer<typeof CreateClaimSchema>;
@@ -48,7 +55,7 @@ export const UpdateClaimSchema = z.object({
 export type UpdateClaimInput = z.infer<typeof UpdateClaimSchema>;
 
 export const ApproveClaimSchema = z.object({
-  amount: z.number().positive('Settlement amount must be positive'),
+  amount: z.number().positive('Reimbursement amount must be positive'),
   notes: z.string().max(2000).optional(),
 });
 
@@ -70,7 +77,7 @@ export type RequestInfoInput = z.infer<typeof RequestInfoSchema>;
 
 export const ClaimsQuerySchema = z.object({
   status: z.nativeEnum(ClaimStatus).optional(),
-  incidentType: z.nativeEnum(IncidentType).optional(),
+  serviceType: z.nativeEnum(ServiceType).optional(),
   adjusterId: z.string().optional(),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),

@@ -19,7 +19,7 @@ const STATUS_COLORS: Record<ClaimStatus, string> = {
   [ClaimStatus.PENDING_ADDITIONAL_INFO]: 'bg-yellow-100 text-yellow-700',
   [ClaimStatus.APPROVED]: 'bg-green-100 text-green-700',
   [ClaimStatus.DENIED]: 'bg-red-100 text-red-700',
-  [ClaimStatus.SETTLED]: 'bg-green-100 text-green-700',
+  [ClaimStatus.PAID]: 'bg-green-100 text-green-700',
   [ClaimStatus.CLOSED]: 'bg-gray-100 text-gray-600',
 };
 
@@ -35,7 +35,7 @@ const FRIENDLY_STATUS: Record<ClaimStatus, string> = {
   [ClaimStatus.PENDING_ADDITIONAL_INFO]: 'We need more information from you',
   [ClaimStatus.APPROVED]: 'Approved',
   [ClaimStatus.DENIED]: 'Claim denied',
-  [ClaimStatus.SETTLED]: 'Settled — payment processed',
+  [ClaimStatus.PAID]: 'Paid — reimbursement processed',
   [ClaimStatus.CLOSED]: 'Closed',
 };
 
@@ -102,7 +102,7 @@ export function ClientClaimDetailPage() {
     return <div className="text-center text-muted-foreground py-20">Claim not found.</div>;
   }
 
-  const isApproved = claim.status === ClaimStatus.APPROVED || claim.status === ClaimStatus.SETTLED;
+  const isApproved = claim.status === ClaimStatus.APPROVED || claim.status === ClaimStatus.PAID;
   const isDenied = claim.status === ClaimStatus.DENIED;
   const needsInfo = claim.status === ClaimStatus.PENDING_ADDITIONAL_INFO;
   const isProcessing = [
@@ -132,10 +132,10 @@ export function ClientClaimDetailPage() {
           <div>
             <p className="text-xs text-muted-foreground font-mono">{claim.claimNumber}</p>
             <h1 className="text-xl font-bold mt-0.5">
-              {claim.incidentType.replace(/_/g, ' ')}
+              {claim.serviceType.replace(/_/g, ' ')}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Incident on {formatDate(claim.incidentDate)} · Filed {formatDate(claim.createdAt)}
+              Service on {formatDate(claim.serviceDate)} · Filed {formatDate(claim.createdAt)}
             </p>
           </div>
           <span className={cn('rounded-full px-3 py-1 text-sm font-medium shrink-0', STATUS_COLORS[claim.status])}>
@@ -154,10 +154,16 @@ export function ClientClaimDetailPage() {
                   ${Number(claim.lossAmount).toLocaleString()}
                 </p>
               )}
-              {claim.settlementRecommendation && (
+              {claim.reimbursementRecommendation && (
                 <p className="text-sm text-green-700 mt-1">
-                  Settlement amount: ${Number(claim.settlementRecommendation.recommendedAmount).toLocaleString()}
+                  Reimbursement amount: ${Number(claim.reimbursementRecommendation.recommendedAmount).toLocaleString()}
                 </p>
+              )}
+              {claim.reimbursementRecommendation?.methodology && (
+                <div className="mt-3 pt-3 border-t border-green-200">
+                  <p className="text-xs font-semibold text-green-800 uppercase tracking-wide mb-1">Reimbursement Breakdown</p>
+                  <p className="text-sm text-green-700 leading-relaxed">{claim.reimbursementRecommendation.methodology}</p>
+                </div>
               )}
             </div>
           </div>
@@ -259,8 +265,8 @@ export function ClientClaimDetailPage() {
 
       {/* Description */}
       <div className="rounded-xl border bg-card p-5 space-y-2">
-        <h2 className="font-semibold">Incident Description</h2>
-        <p className="text-sm text-muted-foreground leading-relaxed">{claim.incidentDescription}</p>
+        <h2 className="font-semibold">Service Description</h2>
+        <p className="text-sm text-muted-foreground leading-relaxed">{claim.serviceDescription}</p>
       </div>
     </div>
   );

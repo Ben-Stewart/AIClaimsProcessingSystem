@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { PlusCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatDate, cn } from '@/lib/utils';
 import { ClaimStatus, CLAIM_STATUS_LABELS, RiskLevel, type PaginatedResponse, type Claim } from '@claims/shared';
@@ -18,7 +17,7 @@ const STATUS_COLORS: Record<ClaimStatus, string> = {
   [ClaimStatus.PENDING_ADDITIONAL_INFO]: 'bg-yellow-100 text-yellow-700',
   [ClaimStatus.APPROVED]: 'bg-green-100 text-green-700',
   [ClaimStatus.DENIED]: 'bg-red-100 text-red-700',
-  [ClaimStatus.SETTLED]: 'bg-green-100 text-green-700',
+  [ClaimStatus.PAID]: 'bg-green-100 text-green-700',
   [ClaimStatus.CLOSED]: 'bg-gray-100 text-gray-600',
 };
 
@@ -50,13 +49,6 @@ export function ClaimsListPage() {
           <h1 className="text-2xl font-bold">Claims</h1>
           <p className="text-sm text-muted-foreground mt-1">{data?.total ?? 0} total claims</p>
         </div>
-        <button
-          onClick={() => navigate('/claims/new')}
-          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
-        >
-          <PlusCircle className="h-4 w-4" />
-          New Claim
-        </button>
       </div>
 
       <input
@@ -105,7 +97,7 @@ export function ClaimsListPage() {
                 >
                   <td className="px-4 py-3 font-mono font-medium">{claim.claimNumber}</td>
                   <td className="px-4 py-3">{claim.policy?.holderName ?? '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{claim.incidentType.replace(/_/g, ' ')}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{claim.serviceType.replace(/_/g, ' ')}</td>
                   <td className="px-4 py-3">
                     <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', STATUS_COLORS[claim.status])}>
                       {CLAIM_STATUS_LABELS[claim.status]}
@@ -114,7 +106,7 @@ export function ClaimsListPage() {
                   <td className="px-4 py-3">
                     {claim.fraudAnalysis ? (
                       <span className={cn('font-medium', RISK_COLORS[claim.fraudAnalysis.riskLevel])}>
-                        {claim.fraudAnalysis.riskLevel}
+                        {claim.fraudAnalysis.riskLevel} · {Math.round(claim.fraudAnalysis.riskScore * 100)}%
                       </span>
                     ) : (
                       <span className="text-muted-foreground">—</span>

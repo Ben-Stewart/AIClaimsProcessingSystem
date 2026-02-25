@@ -9,6 +9,7 @@ import {
   ClaimStatus,
   UserRole,
 } from '@claims/shared';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
@@ -28,7 +29,7 @@ claimsRouter.use(authenticate);
 // GET /api/claims
 claimsRouter.get('/', validateQuery(ClaimsQuerySchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { status, incidentType, adjusterId, page, limit, search } = req.query as any;
+    const { status, serviceType, adjusterId, page, limit, search } = req.query as any;
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = {};
@@ -39,11 +40,11 @@ claimsRouter.get('/', validateQuery(ClaimsQuerySchema), async (req: Request, res
       if (adjusterId) where.adjusterId = adjusterId;
     }
     if (status) where.status = status;
-    if (incidentType) where.incidentType = incidentType;
+    if (serviceType) where.serviceType = serviceType;
     if (search) {
       where.OR = [
         { claimNumber: { contains: search, mode: 'insensitive' } },
-        { incidentDescription: { contains: search, mode: 'insensitive' } },
+        { serviceDescription: { contains: search, mode: 'insensitive' } },
         { policy: { holderName: { contains: search, mode: 'insensitive' } } },
       ];
     }
@@ -78,7 +79,7 @@ claimsRouter.get('/', validateQuery(ClaimsQuerySchema), async (req: Request, res
 // POST /api/claims
 claimsRouter.post('/', validateBody(CreateClaimSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { policyNumber, incidentDate, incidentType, incidentDescription, lossAmount } = req.body;
+    const { policyNumber, serviceDate, serviceType, serviceDescription, lossAmount, provider } = req.body;
 
     const policy = await prisma.policy.findUnique({ where: { policyNumber } });
     if (!policy) throw new AppError(404, `Policy ${policyNumber} not found`, 'POLICY_NOT_FOUND');
@@ -98,10 +99,11 @@ claimsRouter.post('/', validateBody(CreateClaimSchema), async (req: Request, res
       data: {
         claimNumber,
         policyId: policy.id,
-        incidentDate: new Date(incidentDate),
-        incidentType,
-        incidentDescription,
+        serviceDate: new Date(serviceDate),
+        serviceType,
+        serviceDescription,
         lossAmount: lossAmount ? lossAmount : null,
+        provider: provider ?? null,
         status: ClaimStatus.FNOL_RECEIVED,
       },
       include: { policy: true },
@@ -112,7 +114,7 @@ claimsRouter.post('/', validateBody(CreateClaimSchema), async (req: Request, res
       actorId: req.user!.userId,
       actorType: 'HUMAN',
       action: 'CLAIM_CREATED',
-      details: { claimNumber, incidentType },
+      details: { claimNumber, serviceType },
     });
 
     res.status(201).json({ data: claim });
@@ -132,7 +134,7 @@ claimsRouter.get('/:id', async (req: Request, res: Response, next: NextFunction)
         documents: true,
         aiAssessment: true,
         fraudAnalysis: true,
-        settlementRecommendation: true,
+        reimbursementRecommendation: true,
       },
     });
 
@@ -199,7 +201,7 @@ claimsRouter.post('/:id/approve', authorize(UserRole.ADJUSTER, UserRole.SUPERVIS
         where: { id: req.params.id },
         data: { status: ClaimStatus.APPROVED, adjusterNotes: notes ?? claim.adjusterNotes },
       }),
-      prisma.settlementRecommendation.upsert({
+      prisma.reimbursementRecommendation.upsert({
         where: { claimId: req.params.id },
         create: {
           claimId: req.params.id,
@@ -318,6 +320,32 @@ claimsRouter.post('/:id/ai/reanalyze', authorize(UserRole.ADJUSTER, UserRole.SUP
     });
 
     res.json({ data: { message: 'AI reanalysis queued' } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/claims/:id
+claimsRouter.delete('/:id', authorize(UserRole.ADJUSTER, UserRole.SUPERVISOR, UserRole.ADMIN), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const claim = await prisma.claim.findUnique({ where: { id: req.params.id } });
+    if (!claim) throw new AppError(404, 'Claim not found', 'NOT_FOUND');
+
+    await prisma.$transaction([
+      prisma.payment.deleteMany({ where: { claimId: req.params.id } }),
+      prisma.auditEvent.create({
+        data: {
+          claimId: req.params.id,
+          actorId: req.user!.userId,
+          actorType: 'HUMAN',
+          action: 'CLAIM_DELETED',
+          details: { claimNumber: claim.claimNumber, status: claim.status } as Prisma.InputJsonValue,
+        },
+      }),
+      prisma.claim.delete({ where: { id: req.params.id } }),
+    ]);
+
+    res.json({ data: { message: 'Claim deleted' } });
   } catch (err) {
     next(err);
   }

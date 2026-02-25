@@ -1,3 +1,4 @@
+import path from 'path';
 import express, { type Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -13,6 +14,11 @@ export function createApp(): Express {
   app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
   app.use(express.json({ limit: '10mb' }));
   app.use(cookieParser());
+
+  // Local disk storage fallback — only active when R2_ACCOUNT_ID is not set
+  if (!env.R2_ACCOUNT_ID) {
+    app.use('/local-uploads', express.static(path.join(process.cwd(), 'uploads')));
+  }
 
   app.use('/api', apiRouter);
 

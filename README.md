@@ -16,7 +16,7 @@ All demo accounts use the password: **`demo1234`**
 | `supervisor@demo.com` | `demo1234` | Supervisor | Claims oversight + analytics |
 | `adjuster@demo.com` | `demo1234` | Adjuster | Review, approve, and deny claims |
 
-### Client Portal — `http://localhost:3000/client/login`
+### Client Portal — `http://localhost:3000/login`
 
 | Email | Password | Role | Policy |
 |---|---|---|---|
@@ -26,19 +26,11 @@ All demo accounts use the password: **`demo1234`**
 
 ## Logging In
 
-### As a Staff Member (Adjuster / Supervisor / Admin)
+Both staff and client accounts share a single login page at **`http://localhost:3000/login`**. Clickable demo credential chips are shown on the page for quick sign-in.
 
-1. Go to **`http://localhost:3000/login`**
-2. Enter your email and password from the staff table above
-3. You'll land on the **Dashboard** showing live claim metrics
-
-### As a Client (Policyholder)
-
-1. Go to **`http://localhost:3000/client/login`**
-2. Enter `client@demo.com` / `demo1234`
-3. You'll land on your **Claims Portal** showing your policy and any filed claims
-
-> Staff and client portals are fully separated. Logging in at `/login` as a CLIENT will automatically redirect you to `/client`. Logging in at `/client/login` as a staff member will redirect you to `/`.
+After login, each role is automatically redirected to the correct portal:
+- **Client** → `/client` (client claims portal)
+- **Adjuster / Supervisor / Admin** → `/` (staff dashboard)
 
 ---
 
@@ -64,7 +56,7 @@ New policyholders can self-register without admin involvement:
 2. Click **File a Claim**
 3. Your policy number is pre-filled — select the incident date, type, and describe what happened
 4. Click **Submit Claim**
-5. Upload any supporting documents (photos, police reports, estimates) from the claim detail page
+5. Upload any supporting documents (receipts, referral letters, treatment plans) from the claim detail page
 6. The AI pipeline runs automatically — low-risk claims under **$5,000** are approved without any adjuster action
 
 ---
@@ -76,9 +68,9 @@ New policyholders can self-register without admin involvement:
 3. Click any claim to open the detail view with five tabs:
    - **Overview** — status, policy details, adjuster notes
    - **Documents** — uploaded files and AI extraction results
-   - **AI Assessment** — damage severity, coverage analysis
+   - **AI Assessment** — claim severity, coverage analysis
    - **Fraud Risk** — risk score, signals, and anomalies
-   - **Settlement** — AI-recommended amount and adjuster decision tools
+   - **Reimbursement** — AI-recommended amount and adjuster decision tools
 4. Use **Approve**, **Deny**, **Request Info**, or **Escalate** to action the claim
 
 ---
@@ -131,11 +123,19 @@ Then open **`http://localhost:3000`**.
 
 ---
 
+## AI Pipeline
+
+The system runs a fully automated AI pipeline on every claim — document extraction, fraud detection, benefit assessment, reimbursement calculation, and an auto-approval decision.
+
+For a detailed breakdown of each stage, the decision logic, signal weights, and model prompts, see **[AI_PIPELINE.md](AI_PIPELINE.md)**.
+
+---
+
 ## Auto-Approval Threshold
 
 Claims are automatically approved by the AI (no adjuster needed) when:
 - Fraud risk level is **LOW**
-- AI settlement recommendation is **≤ $5,000**
+- AI reimbursement estimate is **≤ $5,000**
 
 To change the threshold, update `AUTO_APPROVE_THRESHOLD` in `.env`:
 ```

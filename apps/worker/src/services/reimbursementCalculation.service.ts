@@ -4,7 +4,7 @@ import { env } from '../config/env.js';
 
 const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
-export async function runSettlementCalculation(claimId: string): Promise<void> {
+export async function runReimbursementCalculation(claimId: string): Promise<void> {
   const claim = await prisma.claim.findUnique({
     where: { id: claimId },
     include: {
@@ -17,15 +17,15 @@ export async function runSettlementCalculation(claimId: string): Promise<void> {
   if (!claim) throw new Error(`Claim ${claimId} not found`);
   if (!claim.aiAssessment) throw new Error(`No AI assessment for claim ${claimId}`);
 
-  // Find comparable settled claims
+  // Find comparable paid claims
   const comparables = await prisma.claim.findMany({
     where: {
-      incidentType: claim.incidentType,
-      status: 'SETTLED',
+      serviceType: claim.serviceType,
+      status: 'PAID',
       id: { not: claimId },
     },
     include: {
-      settlementRecommendation: true,
+      reimbursementRecommendation: true,
       aiAssessment: true,
     },
     take: 10,
@@ -33,11 +33,11 @@ export async function runSettlementCalculation(claimId: string): Promise<void> {
   });
 
   const comparableData = comparables
-    .filter((c) => c.settlementRecommendation?.adjusterDecision)
+    .filter((c) => c.reimbursementRecommendation?.adjusterDecision)
     .map((c) => ({
-      incidentType: c.incidentType,
-      damageSeverity: c.aiAssessment?.damageSeverity,
-      settlementAmount: Number(c.settlementRecommendation!.adjusterDecision),
+      serviceType: c.serviceType,
+      claimSeverity: c.aiAssessment?.claimSeverity,
+      reimbursementAmount: Number(c.reimbursementRecommendation!.adjusterDecision),
     }));
 
   const response = await openai.chat.completions.create({
@@ -46,19 +46,21 @@ export async function runSettlementCalculation(claimId: string): Promise<void> {
       {
         role: 'system',
         content:
-          'You are an expert insurance settlement analyst. Calculate a fair settlement range based on the claim data and comparable settlements. Return JSON only.',
+          'You are an expert medical benefits reimbursement analyst. Calculate a fair reimbursement range based on the claim data and comparable reimbursements. Return JSON only.',
       },
       {
         role: 'user',
         content: `Claim details:
-- Type: ${claim.incidentType}
-- Damage severity: ${claim.aiAssessment.damageSeverity}
-- Estimated repair cost: $${claim.aiAssessment.estimatedRepairCost ?? 'unknown'}
-- Coverage limit: $${claim.policy.coverageLimit}
+- Type: ${claim.serviceType}
+- Claim severity: ${claim.aiAssessment.claimSeverity}
+- Estimated treatment cost: $${claim.aiAssessment.estimatedTreatmentCost ?? 'unknown'}
+- Reasonable & customary limit for this service: $${(claim.policy.reasonableAndCustomary as Record<string, number>)[claim.serviceType] ?? 'not specified'}
+- Reimbursement rate: ${Math.round(Number(claim.policy.percentCovered) * 100)}%
+- Annual maximum: $${claim.policy.coverageLimit}
 - Deductible: $${claim.policy.deductible}
 - Coverage applicable: ${claim.aiAssessment.coverageApplicable}
 
-Comparable settled claims: ${JSON.stringify(comparableData)}
+Comparable paid claims: ${JSON.stringify(comparableData)}
 
 Return JSON:
 {
@@ -69,7 +71,7 @@ Return JSON:
   "confidence": number between 0 and 1
 }
 
-Ensure amounts account for the deductible. Do not exceed coverage limit.`,
+Calculate as: min(estimated cost, R&C limit) × reimbursement rate, minus deductible. Do not exceed annual maximum.`,
       },
     ],
     response_format: { type: 'json_object' },
@@ -84,7 +86,7 @@ Ensure amounts account for the deductible. Do not exceed coverage limit.`,
     confidence: number;
   };
 
-  await prisma.settlementRecommendation.upsert({
+  await prisma.reimbursementRecommendation.upsert({
     where: { claimId },
     create: {
       claimId,
@@ -109,7 +111,7 @@ Ensure amounts account for the deductible. Do not exceed coverage limit.`,
     data: {
       claimId,
       actorType: 'AI_SYSTEM',
-      action: 'SETTLEMENT_CALCULATED',
+      action: 'REIMBURSEMENT_CALCULATED',
       details: {
         recommended: result.recommendedAmount,
         range: { low: result.rangeLow, high: result.rangeHigh },

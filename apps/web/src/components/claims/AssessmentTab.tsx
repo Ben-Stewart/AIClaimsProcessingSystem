@@ -1,11 +1,11 @@
 import { formatCurrency, formatConfidence, confidenceColor, cn } from '@/lib/utils';
-import { DamageSeverity, type Claim } from '@claims/shared';
+import { ClaimSeverity, type Claim } from '@claims/shared';
 
-const SEVERITY_CONFIG: Record<DamageSeverity, { color: string; bg: string }> = {
-  [DamageSeverity.MINOR]: { color: 'text-green-700', bg: 'bg-green-50' },
-  [DamageSeverity.MODERATE]: { color: 'text-yellow-700', bg: 'bg-yellow-50' },
-  [DamageSeverity.SEVERE]: { color: 'text-orange-700', bg: 'bg-orange-50' },
-  [DamageSeverity.TOTAL_LOSS]: { color: 'text-red-700', bg: 'bg-red-50' },
+const SEVERITY_CONFIG: Record<ClaimSeverity, { color: string; bg: string }> = {
+  [ClaimSeverity.MINOR]: { color: 'text-green-700', bg: 'bg-green-50' },
+  [ClaimSeverity.MODERATE]: { color: 'text-yellow-700', bg: 'bg-yellow-50' },
+  [ClaimSeverity.SEVERE]: { color: 'text-orange-700', bg: 'bg-orange-50' },
+  [ClaimSeverity.CATASTROPHIC]: { color: 'text-red-700', bg: 'bg-red-50' },
 };
 
 export function AssessmentTab({ claim }: { claim: Claim }) {
@@ -19,16 +19,16 @@ export function AssessmentTab({ claim }: { claim: Claim }) {
     );
   }
 
-  const severityConfig = SEVERITY_CONFIG[assessment.damageSeverity];
+  const severityConfig = SEVERITY_CONFIG[assessment.claimSeverity];
 
   return (
     <div className="p-8 max-w-2xl space-y-6">
       {/* Severity + confidence */}
       <div className="grid grid-cols-2 gap-4">
         <div className={cn('rounded-xl border p-5 space-y-1', severityConfig.bg)}>
-          <p className="text-xs text-muted-foreground">Damage Severity</p>
+          <p className="text-xs text-muted-foreground">Claim Severity</p>
           <p className={cn('text-2xl font-bold', severityConfig.color)}>
-            {assessment.damageSeverity.replace(/_/g, ' ')}
+            {assessment.claimSeverity.replace(/_/g, ' ')}
           </p>
         </div>
         <div className="rounded-xl border bg-card p-5 space-y-1">
@@ -40,10 +40,10 @@ export function AssessmentTab({ claim }: { claim: Claim }) {
       </div>
 
       {/* Estimated cost */}
-      {assessment.estimatedRepairCost !== null && (
+      {assessment.estimatedTreatmentCost !== null && (
         <div className="rounded-xl border bg-card p-5 space-y-1">
-          <p className="text-xs text-muted-foreground">Estimated Repair / Loss Cost</p>
-          <p className="text-2xl font-bold">{formatCurrency(assessment.estimatedRepairCost)}</p>
+          <p className="text-xs text-muted-foreground">Estimated Treatment Cost</p>
+          <p className="text-2xl font-bold">{formatCurrency(assessment.estimatedTreatmentCost)}</p>
         </div>
       )}
 
@@ -58,12 +58,12 @@ export function AssessmentTab({ claim }: { claim: Claim }) {
         <p className="text-sm text-muted-foreground">{assessment.coverageReason}</p>
       </div>
 
-      {/* Damage categories */}
-      {Array.isArray(assessment.damageCategories) && assessment.damageCategories.length > 0 && (
+      {/* Treatment categories */}
+      {Array.isArray(assessment.treatmentCategories) && assessment.treatmentCategories.length > 0 && (
         <div className="space-y-3">
-          <h2 className="font-semibold text-sm">Damage Categories</h2>
+          <h2 className="font-semibold text-sm">Treatment Areas</h2>
           <div className="space-y-2">
-            {(assessment.damageCategories as Array<{ category: string; description: string; confidence: number }>).map((cat, i) => (
+            {(assessment.treatmentCategories as Array<{ category: string; description: string; confidence: number }>).map((cat, i) => (
               <div key={i} className="rounded-lg border bg-card p-4 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{cat.category}</span>

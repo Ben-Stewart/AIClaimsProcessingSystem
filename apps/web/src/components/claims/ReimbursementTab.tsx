@@ -7,14 +7,14 @@ import { ApproveClaimSchema, ApproveClaimInput, DenyClaimSchema, DenyClaimInput,
 import { api } from '@/lib/api';
 import { formatCurrency, formatConfidence, confidenceColor, cn } from '@/lib/utils';
 
-export function SettlementTab({ claim }: { claim: Claim }) {
+export function ReimbursementTab({ claim }: { claim: Claim }) {
   const queryClient = useQueryClient();
-  const settlement = claim.settlementRecommendation;
+  const reimbursement = claim.reimbursementRecommendation;
   const [showDenyForm, setShowDenyForm] = useState(false);
 
   const approveForm = useForm<ApproveClaimInput>({
     resolver: zodResolver(ApproveClaimSchema),
-    defaultValues: { amount: settlement?.recommendedAmount ?? 0 },
+    defaultValues: { amount: reimbursement?.recommendedAmount ?? 0 },
   });
 
   const denyForm = useForm<DenyClaimInput>({ resolver: zodResolver(DenyClaimSchema) });
@@ -29,17 +29,17 @@ export function SettlementTab({ claim }: { claim: Claim }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['claims', claim.id] }),
   });
 
-  if (!settlement) {
+  if (!reimbursement) {
     return (
       <div className="flex h-64 items-center justify-center text-sm text-muted-foreground p-8">
-        Settlement recommendation not yet available. AI analysis must complete first.
+        Reimbursement estimate not yet available. AI analysis must complete first.
       </div>
     );
   }
 
-  const range = settlement.rangeHigh - settlement.rangeLow;
+  const range = reimbursement.rangeHigh - reimbursement.rangeLow;
   const recommendedPosition = range > 0
-    ? ((settlement.recommendedAmount - settlement.rangeLow) / range) * 100
+    ? ((reimbursement.recommendedAmount - reimbursement.rangeLow) / range) * 100
     : 50;
 
   return (
@@ -47,12 +47,12 @@ export function SettlementTab({ claim }: { claim: Claim }) {
       {/* Recommended amount */}
       <div className="rounded-xl border bg-card p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">AI Recommended Settlement</p>
-          <span className={cn('text-sm font-medium', confidenceColor(settlement.confidence))}>
-            {formatConfidence(settlement.confidence)} confidence
+          <p className="text-sm text-muted-foreground">AI Recommended Reimbursement</p>
+          <span className={cn('text-sm font-medium', confidenceColor(reimbursement.confidence))}>
+            {formatConfidence(reimbursement.confidence)} confidence
           </span>
         </div>
-        <p className="text-4xl font-bold">{formatCurrency(settlement.recommendedAmount)}</p>
+        <p className="text-4xl font-bold">{formatCurrency(reimbursement.recommendedAmount)}</p>
 
         {/* Range visualization */}
         <div className="space-y-1.5">
@@ -67,28 +67,28 @@ export function SettlementTab({ claim }: { claim: Claim }) {
             />
           </div>
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{formatCurrency(settlement.rangeLow)}</span>
+            <span>{formatCurrency(reimbursement.rangeLow)}</span>
             <span className="text-primary font-medium">Recommended</span>
-            <span>{formatCurrency(settlement.rangeHigh)}</span>
+            <span>{formatCurrency(reimbursement.rangeHigh)}</span>
           </div>
         </div>
 
         <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
           <p className="font-medium text-foreground mb-1">Methodology</p>
-          <p>{settlement.methodology}</p>
-          {settlement.comparableCount > 0 && (
-            <p className="mt-1 text-xs">Based on {settlement.comparableCount} comparable claims</p>
+          <p>{reimbursement.methodology}</p>
+          {reimbursement.comparableCount > 0 && (
+            <p className="mt-1 text-xs">Based on {reimbursement.comparableCount} comparable claims</p>
           )}
         </div>
       </div>
 
       {/* Adjuster decision */}
-      {settlement.adjusterDecision ? (
+      {reimbursement.adjusterDecision ? (
         <div className="rounded-xl border bg-green-50 border-green-200 p-5 space-y-2">
-          <p className="text-sm font-semibold text-green-700">Settlement Approved</p>
-          <p className="text-2xl font-bold text-green-700">{formatCurrency(settlement.adjusterDecision)}</p>
-          {settlement.adjusterRationale && (
-            <p className="text-sm text-muted-foreground">{settlement.adjusterRationale}</p>
+          <p className="text-sm font-semibold text-green-700">Reimbursement Approved</p>
+          <p className="text-2xl font-bold text-green-700">{formatCurrency(reimbursement.adjusterDecision)}</p>
+          {reimbursement.adjusterRationale && (
+            <p className="text-sm text-muted-foreground">{reimbursement.adjusterRationale}</p>
           )}
         </div>
       ) : (
@@ -99,7 +99,7 @@ export function SettlementTab({ claim }: { claim: Claim }) {
               className="space-y-4"
             >
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Settlement Amount</label>
+                <label className="text-sm font-medium">Reimbursement Amount</label>
                 <input
                   type="number"
                   step="0.01"
@@ -126,7 +126,7 @@ export function SettlementTab({ claim }: { claim: Claim }) {
                   className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
                 >
                   <CheckCircle className="h-4 w-4" />
-                  {approveMutation.isPending ? 'Approving...' : 'Approve Settlement'}
+                  {approveMutation.isPending ? 'Approving...' : 'Approve Reimbursement'}
                 </button>
                 <button
                   type="button"

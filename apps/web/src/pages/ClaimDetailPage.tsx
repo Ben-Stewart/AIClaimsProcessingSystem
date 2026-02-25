@@ -1,17 +1,19 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate, NavLink, Routes, Route, Navigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { ArrowLeft, Trash2 } from 'lucide-react';
+import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import { api } from '@/lib/api';
 import { formatDate, cn } from '@/lib/utils';
-import { CLAIM_STATUS_LABELS, WS_EVENTS, type ApiResponse, type Claim } from '@claims/shared';
+import { CLAIM_STATUS_LABELS, WS_EVENTS, UserRole, type ApiResponse, type Claim } from '@claims/shared';
 import { subscribeToClaimUpdates, unsubscribeFromClaimUpdates, getSocket } from '@/lib/socket';
 import { useAIJobs } from '@/context/AIJobContext';
+import { useAuth } from '@/context/AuthContext';
 import { AIJobProgressPanel } from '@/components/claims/AIJobProgressPanel';
 import { DocumentsTab } from '@/components/claims/DocumentsTab';
 import { FraudTab } from '@/components/claims/FraudTab';
 import { AssessmentTab } from '@/components/claims/AssessmentTab';
-import { SettlementTab } from '@/components/claims/SettlementTab';
+import { ReimbursementTab } from '@/components/claims/ReimbursementTab';
 
 export function ClaimDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +25,17 @@ export function ClaimDetailPage() {
     queryKey: ['claims', id],
     queryFn: () => api.get<ApiResponse<Claim>>(`/api/claims/${id}`),
     enabled: !!id,
+  });
+
+  const { user } = useAuth();
+  const canDelete = user?.role === UserRole.ADJUSTER || user?.role === UserRole.SUPERVISOR || user?.role === UserRole.ADMIN;
+
+  const deleteMutation = useMutation({
+    mutationFn: () => api.delete<{ data: { message: string } }>(`/api/claims/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['claims'] });
+      navigate('/claims');
+    },
   });
 
   // Subscribe to real-time updates for this claim
@@ -56,7 +69,7 @@ export function ClaimDetailPage() {
     { path: 'documents', label: 'Documents' },
     { path: 'assessment', label: 'AI Assessment' },
     { path: 'fraud', label: 'Fraud Risk' },
-    { path: 'settlement', label: 'Settlement' },
+    { path: 'reimbursement', label: 'Reimbursement' },
   ];
 
   if (isLoading) {
@@ -85,7 +98,7 @@ export function ClaimDetailPage() {
           <div>
             <h1 className="text-xl font-bold font-mono">{claim.claimNumber}</h1>
             <p className="text-sm text-muted-foreground">
-              {claim.policy?.holderName} · {claim.incidentType.replace(/_/g, ' ')} · {formatDate(claim.incidentDate)}
+              {claim.policy?.holderName} · {claim.serviceType.replace(/_/g, ' ')} · {formatDate(claim.serviceDate)}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -94,6 +107,46 @@ export function ClaimDetailPage() {
                 <span className="h-2 w-2 animate-pulse rounded-full bg-purple-500" />
                 AI Processing
               </span>
+            )}
+            {canDelete && (
+              <AlertDialog.Root>
+                <AlertDialog.Trigger asChild>
+                  <button
+                    disabled={deleteMutation.isPending}
+                    className="flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    {deleteMutation.isPending ? 'Deleting...' : 'Delete Claim'}
+                  </button>
+                </AlertDialog.Trigger>
+                <AlertDialog.Portal>
+                  <AlertDialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+                  <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border bg-card p-6 shadow-lg">
+                    <AlertDialog.Title className="text-lg font-semibold">
+                      Delete Claim {claim.claimNumber}?
+                    </AlertDialog.Title>
+                    <AlertDialog.Description className="mt-2 text-sm text-muted-foreground">
+                      This will permanently delete the claim and all associated documents, AI assessments, fraud analyses, and payment records. This action cannot be undone.
+                    </AlertDialog.Description>
+                    <div className="mt-6 flex justify-end gap-3">
+                      <AlertDialog.Cancel asChild>
+                        <button className="rounded-md border px-4 py-2 text-sm hover:bg-muted transition-colors">
+                          Cancel
+                        </button>
+                      </AlertDialog.Cancel>
+                      <AlertDialog.Action asChild>
+                        <button
+                          onClick={() => deleteMutation.mutate()}
+                          className="flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete Claim
+                        </button>
+                      </AlertDialog.Action>
+                    </div>
+                  </AlertDialog.Content>
+                </AlertDialog.Portal>
+              </AlertDialog.Root>
             )}
             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
               {CLAIM_STATUS_LABELS[claim.status]}
@@ -138,7 +191,7 @@ export function ClaimDetailPage() {
           <Route path="documents" element={<DocumentsTab claimId={claim.id} />} />
           <Route path="assessment" element={<AssessmentTab claim={claim} />} />
           <Route path="fraud" element={<FraudTab claim={claim} />} />
-          <Route path="settlement" element={<SettlementTab claim={claim} />} />
+          <Route path="reimbursement" element={<ReimbursementTab claim={claim} />} />
           <Route path="*" element={<Navigate to="" replace />} />
         </Routes>
       </div>
@@ -150,8 +203,8 @@ function ClaimOverviewTab({ claim }: { claim: Claim }) {
   return (
     <div className="p-8 max-w-3xl space-y-6">
       <div className="rounded-xl border bg-card p-6 space-y-4">
-        <h2 className="font-semibold">Incident Description</h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">{claim.incidentDescription}</p>
+        <h2 className="font-semibold">Service Description</h2>
+        <p className="text-sm leading-relaxed text-muted-foreground">{claim.serviceDescription}</p>
       </div>
 
       {claim.adjusterNotes && (

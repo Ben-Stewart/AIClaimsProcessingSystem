@@ -14,6 +14,7 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({ resolver: zodResolver(LoginSchema) });
 
@@ -34,8 +35,29 @@ export function LoginPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Shield className="h-6 w-6 text-primary" />
           </div>
-          <h1 className="text-xl font-semibold">AI Claims Processing</h1>
+          <h1 className="text-xl font-semibold">AI Claims Portal</h1>
           <p className="text-sm text-muted-foreground">Sign in to your account</p>
+        </div>
+
+        <div className="rounded-md border border-dashed bg-muted/40 px-3 py-2 space-y-2 text-center">
+          <p className="text-xs text-muted-foreground">Demo accounts</p>
+          <div className="flex gap-2 justify-center flex-wrap">
+            <button
+              type="button"
+              onClick={() => { setValue('email', 'adjuster@demo.com'); setValue('password', 'demo1234'); }}
+              className="rounded-md bg-background border px-3 py-1 text-xs font-mono hover:bg-muted transition-colors"
+            >
+              adjuster@demo.com
+            </button>
+            <button
+              type="button"
+              onClick={() => { setValue('email', 'client@demo.com'); setValue('password', 'demo1234'); }}
+              className="rounded-md bg-background border px-3 py-1 text-xs font-mono hover:bg-muted transition-colors"
+            >
+              client@demo.com
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">Password: demo1234</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -78,9 +100,6 @@ export function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-muted-foreground">
-          Demo credentials: adjuster@demo.com / demo123
-        </p>
       </div>
     </div>
   );

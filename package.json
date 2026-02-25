@@ -2,7 +2,7 @@
   "name": "ai-claims-processing-system",
   "private": true,
   "scripts": {
-    "dev": "pnpm --parallel --filter=./apps/* run dev",
+    "dev": "pnpm --parallel --filter=./apps/* --filter=@claims/shared run dev",
     "build": "pnpm --filter=@claims/shared build && pnpm --parallel --filter=./apps/* run build",
     "lint": "pnpm --recursive run lint",
     "test": "pnpm --recursive run test",

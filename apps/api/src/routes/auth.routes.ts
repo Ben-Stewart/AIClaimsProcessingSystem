@@ -14,7 +14,12 @@ authRouter.post('/login', validateBody(LoginSchema), async (req: Request, res: R
   try {
     const { email, password } = req.body;
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const policySelect = { policyNumber: true, coverageType: true, coverageLimit: true, deductible: true, percentCovered: true, reasonableAndCustomary: true, effectiveDate: true, expiryDate: true };
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { policy: { select: policySelect } },
+    });
     if (!user) {
       throw new AppError(401, 'Invalid email or password', 'INVALID_CREDENTIALS');
     }
@@ -43,7 +48,7 @@ authRouter.post('/login', validateBody(LoginSchema), async (req: Request, res: R
     res.json({
       data: {
         accessToken,
-        user: { id: user.id, email: user.email, name: user.name, role: user.role },
+        user: { id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt, policy: user.policy },
       },
     });
   } catch (err) {
@@ -114,10 +119,21 @@ authRouter.post('/register', validateBody(RegisterSchema), async (req: Request, 
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
+    const userPolicy = {
+      policyNumber: policy.policyNumber,
+      coverageType: policy.coverageType,
+      coverageLimit: policy.coverageLimit,
+      deductible: policy.deductible,
+      percentCovered: policy.percentCovered,
+      reasonableAndCustomary: policy.reasonableAndCustomary,
+      effectiveDate: policy.effectiveDate,
+      expiryDate: policy.expiryDate,
+    };
+
     res.status(201).json({
       data: {
         accessToken,
-        user: { id: user.id, email: user.email, name: user.name, role: user.role },
+        user: { id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt, policy: userPolicy },
       },
     });
   } catch (err) {
@@ -140,7 +156,7 @@ authRouter.get('/me', authenticate, async (req: Request, res: Response, next: Ne
         name: true,
         role: true,
         createdAt: true,
-        policy: { select: { policyNumber: true, coverageType: true, coverageLimit: true, deductible: true } },
+        policy: { select: { policyNumber: true, coverageType: true, coverageLimit: true, deductible: true, percentCovered: true, reasonableAndCustomary: true, effectiveDate: true, expiryDate: true } },
       },
     });
     if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND');

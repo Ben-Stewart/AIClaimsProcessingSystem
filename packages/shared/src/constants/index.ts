@@ -13,7 +13,7 @@ export const CLAIM_STATUS_LABELS: Record<ClaimStatus, string> = {
   [ClaimStatus.PENDING_ADDITIONAL_INFO]: 'Info Requested',
   [ClaimStatus.APPROVED]: 'Approved',
   [ClaimStatus.DENIED]: 'Denied',
-  [ClaimStatus.SETTLED]: 'Settled',
+  [ClaimStatus.PAID]: 'Paid',
   [ClaimStatus.CLOSED]: 'Closed',
 };
 
@@ -64,8 +64,8 @@ export const QUEUE_NAMES = {
   DOCUMENT_ANALYSIS: 'document-analysis',
   FRAUD_DETECTION: 'fraud-detection',
   COVERAGE_VERIFICATION: 'coverage-verification',
-  DAMAGE_ASSESSMENT: 'damage-assessment',
-  SETTLEMENT_CALCULATION: 'settlement-calculation',
+  BENEFIT_ASSESSMENT: 'benefit-assessment',
+  REIMBURSEMENT_CALCULATION: 'reimbursement-calculation',
   CLAIM_PIPELINE: 'claim-pipeline',
 } as const;
 

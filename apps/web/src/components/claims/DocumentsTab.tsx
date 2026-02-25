@@ -6,12 +6,14 @@ import { formatDate, formatConfidence, confidenceColor, cn } from '@/lib/utils';
 import { DocumentType, ExtractionStatus, type ApiResponse, type Document } from '@claims/shared';
 
 const DOC_TYPE_OPTIONS = [
-  { value: DocumentType.DAMAGE_PHOTO, label: 'Damage Photo' },
-  { value: DocumentType.POLICE_REPORT, label: 'Police Report' },
   { value: DocumentType.MEDICAL_RECORD, label: 'Medical Record' },
+  { value: DocumentType.REFERRAL_LETTER, label: 'Referral Letter' },
+  { value: DocumentType.DENTAL_XRAY, label: 'Dental X-Ray' },
+  { value: DocumentType.TREATMENT_PLAN, label: 'Treatment Plan' },
   { value: DocumentType.INVOICE, label: 'Invoice / Bill' },
-  { value: DocumentType.REPAIR_ESTIMATE, label: 'Repair Estimate' },
-  { value: DocumentType.DRIVERS_LICENSE, label: "Driver's License" },
+  { value: DocumentType.EXPLANATION_OF_BENEFITS, label: 'Explanation of Benefits' },
+  { value: DocumentType.INSURANCE_CARD, label: 'Insurance Card' },
+  { value: DocumentType.RECEIPT, label: 'Receipt' },
   { value: DocumentType.WITNESS_STATEMENT, label: 'Witness Statement' },
   { value: DocumentType.OTHER, label: 'Other' },
 ];
@@ -26,7 +28,7 @@ const STATUS_ICON = {
 export function DocumentsTab({ claimId }: { claimId: string }) {
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [docType, setDocType] = useState<DocumentType>(DocumentType.OTHER);
+  const [docType, setDocType] = useState<DocumentType>(DocumentType.MEDICAL_RECORD);
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
 
   const { data } = useQuery({

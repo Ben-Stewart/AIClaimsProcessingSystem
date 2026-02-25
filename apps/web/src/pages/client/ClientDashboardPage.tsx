@@ -18,7 +18,7 @@ const STATUS_COLORS: Record<ClaimStatus, string> = {
   [ClaimStatus.PENDING_ADDITIONAL_INFO]: 'bg-yellow-100 text-yellow-700',
   [ClaimStatus.APPROVED]: 'bg-green-100 text-green-700',
   [ClaimStatus.DENIED]: 'bg-red-100 text-red-700',
-  [ClaimStatus.SETTLED]: 'bg-green-100 text-green-700',
+  [ClaimStatus.PAID]: 'bg-green-100 text-green-700',
   [ClaimStatus.CLOSED]: 'bg-gray-100 text-gray-600',
 };
 
@@ -105,7 +105,7 @@ export function ClientDashboardPage() {
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1 truncate">
-                  {claim.incidentType.replace(/_/g, ' ')} · {formatDate(claim.incidentDate)}
+                  {claim.serviceType.replace(/_/g, ' ')} · {formatDate(claim.serviceDate)}
                 </p>
               </div>
               {claim.lossAmount != null && (
