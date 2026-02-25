@@ -1,0 +1,8 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "pnpm install --frozen-lockfile && pnpm --filter @claims/shared build && pnpm --filter @claims/web build"
+
+[deploy]
+startCommand = "pnpm --filter @claims/web serve:prod"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

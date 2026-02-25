@@ -13,7 +13,7 @@ async function main() {
   await prisma.$connect();
   console.log('Database connected');
 
-  httpServer.listen(env.API_PORT, () => {
+  httpServer.listen(env.PORT ?? env.API_PORT, () => {
     console.log(`API running at ${env.API_URL}`);
   });
 

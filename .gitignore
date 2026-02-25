@@ -28,7 +28,7 @@ Thumbs.db
 *.user
 
 # Prisma
-prisma/migrations/
+# Note: migrations/ is intentionally NOT gitignored — Railway needs them for prisma migrate deploy
 
 # Test coverage
 coverage/

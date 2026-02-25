@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  PORT: z.coerce.number().optional(), // injected by Railway; takes precedence over API_PORT
   API_PORT: z.coerce.number().default(3001),
   API_URL: z.string().url().default('http://localhost:3001'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
