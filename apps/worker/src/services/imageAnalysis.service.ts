@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { DocumentType, ClaimSeverity } from '@claims/shared';
+import { DocumentType } from '@claims/shared';
 import { env } from '../config/env.js';
 
 const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
@@ -173,21 +173,6 @@ Extract all relevant information and return a JSON object with:
   "confidence": confidence percentage 0-100
 }
 Use null for fields not visible.`;
-
-    case DocumentType.DAMAGE_PHOTO:
-      return `You are an expert insurance damage assessor reviewing a damage photo for a claim.
-Analyze this image and return a JSON object with:
-{
-  "claimSeverity": "${ClaimSeverity.MINOR} | ${ClaimSeverity.MODERATE} | ${ClaimSeverity.SEVERE} | ${ClaimSeverity.CATASTROPHIC}",
-  "affectedAreas": ["list of damaged areas/components"],
-  "damageDescription": "clear, professional description of the damage",
-  "repairComplexity": "LOW | MEDIUM | HIGH",
-  "estimatedRepairCost": estimated cost as a number or null if unable to estimate,
-  "consistencyFlags": ["any inconsistencies or concerns noted"],
-  "confidence": confidence percentage 0-100,
-  "adjusterNotes": "brief note suitable for an insurance adjuster"
-}
-Be objective and professional. If you cannot determine something, use null.`;
 
     default:
       return `You are an insurance claims processor reviewing a document.

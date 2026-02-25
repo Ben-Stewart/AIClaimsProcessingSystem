@@ -5,10 +5,7 @@ import { env } from '../config/env.js';
 function getModelId(documentType: DocumentType): string {
   switch (documentType) {
     case DocumentType.INVOICE:
-    case DocumentType.REPAIR_ESTIMATE:
       return 'prebuilt-invoice';
-    case DocumentType.DRIVERS_LICENSE:
-      return 'prebuilt-idDocument';
     default:
       return 'prebuilt-document';
   }
@@ -66,29 +63,6 @@ function getMockExtraction(documentType: DocumentType): { data: Record<string, u
       ],
       icdCodes: ['S13.4XXA'],
       npiNumber: '1234567890',
-    },
-    [DocumentType.POLICE_REPORT]: {
-      reportNumber: 'RPT-2024-08871',
-      incidentDate: '2024-02-22',
-      officerName: 'Officer J. Rodriguez',
-      incidentLocation: '1400 Main St, Springfield',
-      parties: ['Claimant: John Smith', 'Other: Unknown (fled scene)'],
-      faultDetermination: 'Hit and run - other party at fault',
-    },
-    [DocumentType.REPAIR_ESTIMATE]: {
-      shopName: "Mike's Auto Body",
-      estimateDate: '2024-02-23',
-      vehicleYear: 2020,
-      vehicleMake: 'Toyota',
-      vehicleModel: 'Camry',
-      laborHours: 8.5,
-      laborRate: 145,
-      parts: [
-        { part: 'Rear Bumper Assembly', cost: 820 },
-        { part: 'Trunk Lid', cost: 640 },
-        { part: 'Left Tail Light', cost: 185 },
-      ],
-      totalEstimate: 2885.50,
     },
   };
 
