@@ -93,9 +93,9 @@ export function DashboardPage() {
           color="text-green-500"
         />
         <KPICard
-          title="Settled This Month"
-          value={metrics?.settledThisMonth ?? '—'}
-          subtitle={metrics ? formatCurrency(metrics.totalSettledAmount) : ''}
+          title="Paid This Month"
+          value={metrics?.paidThisMonth ?? '—'}
+          subtitle={metrics ? formatCurrency(metrics.totalPaidAmount) : ''}
           icon={FileText}
         />
       </div>
