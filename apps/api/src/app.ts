@@ -15,8 +15,8 @@ export function createApp(): Express {
   app.use(express.json({ limit: '10mb' }));
   app.use(cookieParser());
 
-  // Local disk storage fallback — only active when R2_ACCOUNT_ID is not set
-  if (!env.R2_ACCOUNT_ID) {
+  // Local disk storage fallback — only active when S3 is not configured
+  if (!env.S3_REGION) {
     app.use('/local-uploads', express.static(path.join(process.cwd(), 'uploads')));
   }
 
