@@ -4,11 +4,15 @@ import { DocumentUploadSchema, ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES, UserRole
 import { prisma } from '../config/database.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { uploadFile, getPresignedUrl } from '../services/storage.service.js';
+import { uploadFile, getPresignedUrl, deleteFile } from '../services/storage.service.js';
 import { enqueueDocumentAnalysis } from '../jobs/queues.js';
 import { createAuditEvent } from '../services/audit.service.js';
 
 export const documentsRouter: Router = Router({ mergeParams: true });
+
+function isClient(req: Request) {
+  return req.user?.role === UserRole.CLIENT;
+}
 
 documentsRouter.use(authenticate);
 
@@ -27,6 +31,16 @@ const upload = multer({
 // GET /api/claims/:claimId/documents
 documentsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const claim = await prisma.claim.findUnique({
+      where: { id: req.params.claimId },
+      include: { policy: { select: { clientId: true } } },
+    });
+    if (!claim) throw new AppError(404, 'Claim not found', 'NOT_FOUND');
+
+    if (isClient(req) && claim.policy?.clientId !== req.user!.userId) {
+      throw new AppError(403, 'Access denied', 'FORBIDDEN');
+    }
+
     const documents = await prisma.document.findMany({
       where: { claimId: req.params.claimId },
       orderBy: { createdAt: 'desc' },
@@ -94,8 +108,15 @@ documentsRouter.post(
 // GET /api/documents/:id/download
 documentsRouter.get('/:id/download', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const document = await prisma.document.findUnique({ where: { id: req.params.id } });
+    const document = await prisma.document.findUnique({
+      where: { id: req.params.id },
+      include: { claim: { include: { policy: { select: { clientId: true } } } } },
+    });
     if (!document) throw new AppError(404, 'Document not found', 'NOT_FOUND');
+
+    if (isClient(req) && document.claim?.policy?.clientId !== req.user!.userId) {
+      throw new AppError(403, 'Access denied', 'FORBIDDEN');
+    }
 
     const url = await getPresignedUrl(document.storageKey);
     res.redirect(url);
@@ -111,6 +132,16 @@ documentsRouter.delete('/:id', authorize(UserRole.ADJUSTER, UserRole.SUPERVISOR,
     if (!document) throw new AppError(404, 'Document not found', 'NOT_FOUND');
 
     await prisma.document.delete({ where: { id: req.params.id } });
+    await deleteFile(document.storageKey);
+
+    await createAuditEvent({
+      claimId: document.claimId,
+      actorId: req.user!.userId,
+      actorType: 'HUMAN',
+      action: 'DOCUMENT_DELETED',
+      details: { documentId: document.id, type: document.type, name: document.originalName },
+    });
+
     res.json({ data: { message: 'Document deleted' } });
   } catch (err) {
     next(err);

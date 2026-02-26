@@ -177,6 +177,16 @@ claimsRouter.patch('/:id', authorize(UserRole.ADJUSTER, UserRole.SUPERVISOR, Use
 // GET /api/claims/:id/timeline
 claimsRouter.get('/:id/timeline', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const claim = await prisma.claim.findUnique({
+      where: { id: req.params.id },
+      include: { policy: { select: { clientId: true } } },
+    });
+    if (!claim) throw new AppError(404, 'Claim not found', 'NOT_FOUND');
+
+    if (isClient(req) && claim.policy?.clientId !== req.user!.userId) {
+      throw new AppError(403, 'Access denied', 'FORBIDDEN');
+    }
+
     const events = await prisma.auditEvent.findMany({
       where: { claimId: req.params.id },
       orderBy: { timestamp: 'asc' },

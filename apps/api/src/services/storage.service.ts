@@ -32,6 +32,10 @@ export async function uploadFile(
   file: Express.Multer.File,
   claimId: string,
 ): Promise<string> {
+  if (!/^[a-z0-9]+$/.test(claimId)) {
+    throw new Error('Invalid claim ID');
+  }
+
   const ext = file.originalname.split('.').pop();
   const key = `claims/${claimId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
