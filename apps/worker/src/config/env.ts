@@ -7,10 +7,10 @@ const EnvSchema = z.object({
   OPENAI_API_KEY: z.string().startsWith('sk-'),
   AZURE_DI_ENDPOINT: z.string().url().optional(),
   AZURE_DI_KEY: z.string().optional(),
-  R2_ACCOUNT_ID: z.string().optional(),
-  R2_ACCESS_KEY_ID: z.string().optional(),
-  R2_SECRET_ACCESS_KEY: z.string().optional(),
-  R2_BUCKET_NAME: z.string().default('claims-documents'),
+  S3_REGION: z.string().optional(),
+  S3_ACCESS_KEY_ID: z.string().optional(),
+  S3_SECRET_ACCESS_KEY: z.string().optional(),
+  S3_BUCKET_NAME: z.string().default('claims-documents'),
   API_URL: z.string().url().default('http://localhost:3001'),
 });
 

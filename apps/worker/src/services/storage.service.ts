@@ -4,7 +4,7 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { env } from '../config/env.js';
 
-const USE_LOCAL = !env.R2_ACCOUNT_ID;
+const USE_LOCAL = !env.S3_REGION;
 // Worker runs from apps/worker; uploads are written by the API at apps/api/uploads
 const UPLOADS_DIR = path.join(process.cwd(), '..', 'api', 'uploads');
 
@@ -20,11 +20,10 @@ const EXT_TO_MIME: Record<string, string> = {
 const s3 = USE_LOCAL
   ? null
   : new S3Client({
-      region: 'auto',
-      endpoint: `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      region: env.S3_REGION,
       credentials: {
-        accessKeyId: env.R2_ACCESS_KEY_ID ?? '',
-        secretAccessKey: env.R2_SECRET_ACCESS_KEY ?? '',
+        accessKeyId: env.S3_ACCESS_KEY_ID ?? '',
+        secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? '',
       },
     });
 
@@ -37,6 +36,6 @@ export async function getPresignedUrl(key: string, expiresIn = 3600): Promise<st
     return `data:${mime};base64,${buffer.toString('base64')}`;
   }
 
-  const command = new GetObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: key });
+  const command = new GetObjectCommand({ Bucket: env.S3_BUCKET_NAME, Key: key });
   return getSignedUrl(s3!, command, { expiresIn });
 }

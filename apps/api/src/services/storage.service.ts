@@ -9,22 +9,21 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { env } from '../config/env.js';
 
-const USE_LOCAL = !env.R2_ACCOUNT_ID;
+const USE_LOCAL = !env.S3_REGION;
 const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
 
 if (USE_LOCAL) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-  console.log('[storage] R2 not configured — using local disk storage at', UPLOADS_DIR);
+  console.log('[storage] S3 not configured — using local disk storage at', UPLOADS_DIR);
 }
 
 const s3 = USE_LOCAL
   ? null
   : new S3Client({
-      region: 'auto',
-      endpoint: `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      region: env.S3_REGION,
       credentials: {
-        accessKeyId: env.R2_ACCESS_KEY_ID ?? '',
-        secretAccessKey: env.R2_SECRET_ACCESS_KEY ?? '',
+        accessKeyId: env.S3_ACCESS_KEY_ID ?? '',
+        secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? '',
       },
     });
 
@@ -44,7 +43,7 @@ export async function uploadFile(
 
   await s3!.send(
     new PutObjectCommand({
-      Bucket: env.R2_BUCKET_NAME,
+      Bucket: env.S3_BUCKET_NAME,
       Key: key,
       Body: file.buffer,
       ContentType: file.mimetype,
@@ -79,7 +78,7 @@ export async function deleteFile(key: string): Promise<void> {
 
   await s3!.send(
     new DeleteObjectCommand({
-      Bucket: env.R2_BUCKET_NAME,
+      Bucket: env.S3_BUCKET_NAME,
       Key: key,
     }),
   );
