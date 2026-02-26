@@ -25,6 +25,7 @@ const s3 = USE_LOCAL
         accessKeyId: env.S3_ACCESS_KEY_ID ?? '',
         secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? '',
       },
+      responseChecksumValidation: 'WHEN_REQUIRED',
     });
 
 export async function uploadFile(
@@ -63,7 +64,7 @@ export async function getPresignedUrl(key: string, expiresIn = 3600): Promise<st
   }
 
   const command = new GetObjectCommand({
-    Bucket: env.R2_BUCKET_NAME,
+    Bucket: env.S3_BUCKET_NAME,
     Key: key,
   });
   return getSignedUrl(s3!, command, { expiresIn });

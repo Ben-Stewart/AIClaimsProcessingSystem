@@ -25,6 +25,7 @@ const s3 = USE_LOCAL
         accessKeyId: env.S3_ACCESS_KEY_ID ?? '',
         secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? '',
       },
+      responseChecksumValidation: 'WHEN_REQUIRED',
     });
 
 export async function getPresignedUrl(key: string, expiresIn = 3600): Promise<string> {
