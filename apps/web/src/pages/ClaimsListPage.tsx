@@ -40,6 +40,7 @@ export function ClaimsListPage() {
       if (search) params.set('search', search);
       return api.get<PaginatedResponse<Claim & { fraudAnalysis?: { riskLevel: RiskLevel; riskScore: number } }>>(`/api/claims?${params}`);
     },
+    refetchInterval: 30_000,
   });
 
   return (

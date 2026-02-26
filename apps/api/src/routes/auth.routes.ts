@@ -41,7 +41,7 @@ authRouter.post('/login', validateBody(LoginSchema), async (req: Request, res: R
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -115,7 +115,7 @@ authRouter.post('/register', validateBody(RegisterSchema), async (req: Request, 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -142,7 +142,11 @@ authRouter.post('/register', validateBody(RegisterSchema), async (req: Request, 
 });
 
 authRouter.post('/logout', (_req: Request, res: Response) => {
-  res.clearCookie('refreshToken');
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    sameSite: 'none',
+  });
   res.json({ data: { message: 'Logged out successfully' } });
 });
 

@@ -25,6 +25,8 @@ const EnvSchema = z.object({
   S3_BUCKET_NAME: z.string().default('claims-documents'),
 
   AUTO_APPROVE_THRESHOLD: z.coerce.number().positive().default(500),
+
+  WORKER_INTERNAL_TOKEN: z.string().default('worker-internal'),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

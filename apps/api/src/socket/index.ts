@@ -19,6 +19,13 @@ export function initSocket(httpServer: HttpServer): SocketServer {
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token as string | undefined;
     if (!token) return next(new Error('Authentication required'));
+
+    // Allow worker internal connection without JWT
+    if (token === env.WORKER_INTERNAL_TOKEN) {
+      socket.data.isWorker = true;
+      return next();
+    }
+
     try {
       const payload = jwt.verify(token, env.JWT_SECRET) as AuthPayload;
       socket.data.user = payload;
@@ -29,7 +36,14 @@ export function initSocket(httpServer: HttpServer): SocketServer {
   });
 
   io.on('connection', (socket) => {
+    // Worker relay: broadcast job/claim events to the appropriate claim room
+    socket.on('worker:broadcast', (payload: { claimId: string; event: string; data: unknown }) => {
+      if (!socket.data.isWorker) return;
+      emitToClaimRoom(payload.claimId, payload.event, payload.data);
+    });
+
     socket.on(WS_EVENTS.SUBSCRIBE_CLAIM, async (claimId: string) => {
+      if (socket.data.isWorker) return;
       const user = socket.data.user as AuthPayload;
       if (user.role === UserRole.CLIENT) {
         const claim = await prisma.claim.findUnique({
@@ -42,6 +56,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     });
 
     socket.on(WS_EVENTS.UNSUBSCRIBE_CLAIM, (claimId: string) => {
+      if (socket.data.isWorker) return;
       socket.leave(`claim:${claimId}`);
     });
 
