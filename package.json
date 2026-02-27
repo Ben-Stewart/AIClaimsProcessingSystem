@@ -5,7 +5,7 @@
     "dev": "pnpm --parallel --filter=./apps/* --filter=@claims/shared run dev",
     "build": "pnpm --filter=@claims/shared build && pnpm --parallel --filter=./apps/* run build",
     "lint": "pnpm --recursive run lint",
-    "test": "pnpm --recursive run test",
+    "test": "pnpm --recursive --if-present run test",
     "db:generate": "pnpm --filter=@claims/api run db:generate",
     "db:migrate": "pnpm --filter=@claims/api run db:migrate",
     "db:seed": "pnpm --filter=@claims/api run db:seed",
