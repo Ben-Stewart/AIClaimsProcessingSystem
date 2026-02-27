@@ -14,7 +14,7 @@ const STEPS: Step[] = [
   },
   {
     label: 'Documents',
-    statuses: [ClaimStatus.DOCUMENTS_PENDING, ClaimStatus.DOCUMENTS_UNDER_REVIEW],
+    statuses: [ClaimStatus.DOCUMENTS_UNDER_REVIEW],
   },
   {
     label: 'Under Review',

@@ -8,7 +8,6 @@ import { ClaimStatus, CLAIM_STATUS_LABELS, ServiceType, RiskLevel, type Paginate
 
 const STATUS_COLORS: Record<ClaimStatus, string> = {
   [ClaimStatus.FNOL_RECEIVED]: 'bg-blue-100 text-blue-700',
-  [ClaimStatus.DOCUMENTS_PENDING]: 'bg-yellow-100 text-yellow-700',
   [ClaimStatus.DOCUMENTS_UNDER_REVIEW]: 'bg-yellow-100 text-yellow-700',
   [ClaimStatus.AI_PROCESSING]: 'bg-purple-100 text-purple-700',
   [ClaimStatus.COVERAGE_VERIFIED]: 'bg-blue-100 text-blue-700',

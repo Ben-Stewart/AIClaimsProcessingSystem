@@ -22,17 +22,17 @@ Client uploads document(s)
              │  all docs complete?
              ▼
 ┌────────────────────────────────────────────────────────┐
-│                    Claim Pipeline                       │
-│                                                         │
+│                    Claim Pipeline                      │
+│                                                        │
 │   ┌─────────────────────┐  ┌────────────────────────┐  │
 │   │   Fraud Detection   │  │   Benefit Assessment   │  │  ← run in parallel
 │   └──────────┬──────────┘  └───────────┬────────────┘  │
 │              └──────────────┬──────────┘               │
-│                             ▼                           │
+│                             ▼                          │
 │                  ┌─────────────────────┐               │
 │                  │ Reimbursement Calc. │               │
 │                  └──────────┬──────────┘               │
-│                             ▼                           │
+│                             ▼                          │
 │                  ┌─────────────────────┐               │
 │                  │  Auto-Approval      │               │
 │                  │  Decision           │               │

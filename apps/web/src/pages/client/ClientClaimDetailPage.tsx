@@ -10,7 +10,6 @@ import { ClaimStatusStepper } from '@/components/claims/ClaimStatusStepper';
 
 const STATUS_COLORS: Record<ClaimStatus, string> = {
   [ClaimStatus.FNOL_RECEIVED]: 'bg-blue-100 text-blue-700',
-  [ClaimStatus.DOCUMENTS_PENDING]: 'bg-yellow-100 text-yellow-700',
   [ClaimStatus.DOCUMENTS_UNDER_REVIEW]: 'bg-yellow-100 text-yellow-700',
   [ClaimStatus.AI_PROCESSING]: 'bg-purple-100 text-purple-700',
   [ClaimStatus.COVERAGE_VERIFIED]: 'bg-blue-100 text-blue-700',
@@ -25,8 +24,7 @@ const STATUS_COLORS: Record<ClaimStatus, string> = {
 };
 
 const FRIENDLY_STATUS: Record<ClaimStatus, string> = {
-  [ClaimStatus.FNOL_RECEIVED]: 'Received — we\'ve got your claim',
-  [ClaimStatus.DOCUMENTS_PENDING]: 'Waiting for documents',
+  [ClaimStatus.FNOL_RECEIVED]: 'Please upload your supporting documents',
   [ClaimStatus.DOCUMENTS_UNDER_REVIEW]: 'Reviewing your documents',
   [ClaimStatus.AI_PROCESSING]: 'AI is analyzing your claim',
   [ClaimStatus.COVERAGE_VERIFIED]: 'Coverage confirmed',
@@ -108,7 +106,6 @@ export function ClientClaimDetailPage() {
   const needsInfo = claim.status === ClaimStatus.PENDING_ADDITIONAL_INFO;
   const isProcessing = [
     ClaimStatus.FNOL_RECEIVED,
-    ClaimStatus.DOCUMENTS_PENDING,
     ClaimStatus.DOCUMENTS_UNDER_REVIEW,
     ClaimStatus.AI_PROCESSING,
     ClaimStatus.COVERAGE_VERIFIED,
