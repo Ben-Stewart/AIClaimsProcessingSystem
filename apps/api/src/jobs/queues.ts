@@ -17,7 +17,13 @@ export async function enqueueDocumentAnalysis(
   return documentAnalysisQueue.add(
     'analyze',
     { documentId, claimId, documentType },
-    { priority: JOB_PRIORITIES.NORMAL, attempts: 3, backoff: { type: 'exponential', delay: 2000 } },
+    {
+      priority: JOB_PRIORITIES.NORMAL,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+      removeOnComplete: { count: 100 },
+      removeOnFail: { count: 50 },
+    },
   );
 }
 
@@ -32,6 +38,8 @@ export async function enqueuePipeline(
       priority: JOB_PRIORITIES[priority],
       attempts: 2,
       backoff: { type: 'exponential', delay: 5000 },
+      removeOnComplete: { count: 100 },
+      removeOnFail: { count: 50 },
     },
   );
 }
