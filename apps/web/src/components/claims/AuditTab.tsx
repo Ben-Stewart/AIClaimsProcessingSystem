@@ -25,7 +25,7 @@ const ACTION_LABELS: Record<string, string> = {
   FRAUD_SCORED: 'Fraud analysis completed',
   DOCUMENT_ANALYZED: 'Document analyzed',
   COVERAGE_VERIFIED: 'Coverage verified',
-  ASSESSMENT_COMPLETE: 'AI assessment completed',
+  ASSESSMENT_COMPLETE: 'Coverage assessment completed',
   REIMBURSEMENT_CALCULATED: 'Reimbursement calculated',
 };
 

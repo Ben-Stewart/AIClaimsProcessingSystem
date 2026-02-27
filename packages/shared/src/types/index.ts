@@ -169,6 +169,8 @@ export interface AIAssessment {
   coverageApplicable: boolean;
   coverageReason: string;
   overallConfidence: number;
+  severityRationale: string | null;
+  confidenceRationale: string | null;
   processingTimeMs: number;
   createdAt: string;
 }

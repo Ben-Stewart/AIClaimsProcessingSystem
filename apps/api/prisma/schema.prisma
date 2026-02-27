@@ -198,6 +198,8 @@ model AIAssessment {
   coverageReason       String
   applicableEndorsements Json         @default("[]")
   overallConfidence    Float
+  severityRationale    String?
+  confidenceRationale  String?
   processingTimeMs     Int
   modelVersions        Json           @default("{}")
 

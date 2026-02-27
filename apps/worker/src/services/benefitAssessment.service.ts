@@ -46,6 +46,8 @@ Return JSON:
   "coverageApplicable": boolean,
   "coverageReason": string,
   "overallConfidence": number between 0 and 1,
+  "severityRationale": "1-2 sentences explaining why this severity level was chosen based on the documents",
+  "confidenceRationale": "1-2 sentences explaining what drove this confidence score — what was clear and what was uncertain",
   "adjusterSummary": string
 }`,
       },
@@ -61,6 +63,8 @@ Return JSON:
     coverageApplicable: boolean;
     coverageReason: string;
     overallConfidence: number;
+    severityRationale: string | null;
+    confidenceRationale: string | null;
   };
 
   const startTime = Date.now();
@@ -76,6 +80,8 @@ Return JSON:
       coverageApplicable: result.coverageApplicable ?? true,
       coverageReason: result.coverageReason ?? 'Coverage determination pending',
       overallConfidence: result.overallConfidence ?? 0.8,
+      severityRationale: result.severityRationale ?? null,
+      confidenceRationale: result.confidenceRationale ?? null,
       processingTimeMs: Date.now() - startTime,
       modelVersions: { gpt: 'gpt-4o' },
     },
@@ -86,6 +92,8 @@ Return JSON:
       coverageApplicable: result.coverageApplicable ?? true,
       coverageReason: result.coverageReason ?? 'Coverage determination pending',
       overallConfidence: result.overallConfidence ?? 0.8,
+      severityRationale: result.severityRationale ?? null,
+      confidenceRationale: result.confidenceRationale ?? null,
       processingTimeMs: Date.now() - startTime,
     },
   });

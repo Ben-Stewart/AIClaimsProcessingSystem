@@ -68,7 +68,7 @@ export function ClaimDetailPage() {
   const tabs = [
     { path: '', label: 'Overview', end: true },
     { path: 'documents', label: 'Documents' },
-    { path: 'assessment', label: 'AI Assessment' },
+    { path: 'assessment', label: 'Coverage Assessment' },
     { path: 'fraud', label: 'Fraud Risk' },
     { path: 'reimbursement', label: 'Reimbursement' },
     { path: 'activity', label: 'Activity' },
@@ -128,7 +128,7 @@ export function ClaimDetailPage() {
                       Delete Claim {claim.claimNumber}?
                     </AlertDialog.Title>
                     <AlertDialog.Description className="mt-2 text-sm text-muted-foreground">
-                      This will permanently delete the claim and all associated documents, AI assessments, fraud analyses, and payment records. This action cannot be undone.
+                      This will permanently delete the claim and all associated documents, coverage assessments, fraud analyses, and payment records. This action cannot be undone.
                     </AlertDialog.Description>
                     <div className="mt-6 flex justify-end gap-3">
                       <AlertDialog.Cancel asChild>

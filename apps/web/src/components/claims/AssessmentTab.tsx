@@ -14,7 +14,7 @@ export function AssessmentTab({ claim }: { claim: Claim }) {
   if (!assessment) {
     return (
       <div className="flex h-64 items-center justify-center text-sm text-muted-foreground p-8">
-        AI assessment not yet available. Upload documents to trigger AI processing.
+        Coverage assessment not yet available. Upload documents to trigger AI processing.
       </div>
     );
   }
@@ -25,17 +25,23 @@ export function AssessmentTab({ claim }: { claim: Claim }) {
     <div className="p-8 max-w-2xl space-y-6">
       {/* Severity + confidence */}
       <div className="grid grid-cols-2 gap-4">
-        <div className={cn('rounded-xl border p-5 space-y-1', severityConfig.bg)}>
+        <div className={cn('rounded-xl border p-5 space-y-2', severityConfig.bg)}>
           <p className="text-xs text-muted-foreground">Claim Severity</p>
           <p className={cn('text-2xl font-bold', severityConfig.color)}>
             {assessment.claimSeverity.replace(/_/g, ' ')}
           </p>
+          {assessment.severityRationale && (
+            <p className="text-sm text-muted-foreground">{assessment.severityRationale}</p>
+          )}
         </div>
-        <div className="rounded-xl border bg-card p-5 space-y-1">
+        <div className="rounded-xl border bg-card p-5 space-y-2">
           <p className="text-xs text-muted-foreground">AI Confidence</p>
           <p className={cn('text-2xl font-bold', confidenceColor(assessment.overallConfidence))}>
             {formatConfidence(assessment.overallConfidence)}
           </p>
+          {assessment.confidenceRationale && (
+            <p className="text-sm text-muted-foreground">{assessment.confidenceRationale}</p>
+          )}
         </div>
       </div>
 
