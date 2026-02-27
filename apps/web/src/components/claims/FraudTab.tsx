@@ -153,8 +153,10 @@ export function FraudTab({ claim }: { claim: Claim }) {
       )}
 
       {/* Actions */}
-      {fraud.recommendation === FraudRecommendation.ESCALATE_SIU &&
-       ![ClaimStatus.APPROVED, ClaimStatus.DENIED, ClaimStatus.PAID, ClaimStatus.CLOSED].includes(claim.status) && (
+      {(fraud.recommendation === FraudRecommendation.ESCALATE_SIU ||
+        fraud.riskLevel === RiskLevel.HIGH ||
+        fraud.riskLevel === RiskLevel.CRITICAL) &&
+       ![ClaimStatus.APPROVED, ClaimStatus.DENIED, ClaimStatus.PAID, ClaimStatus.CLOSED, ClaimStatus.FRAUD_REVIEW].includes(claim.status) && (
         <button
           onClick={() => escalate.mutate()}
           disabled={escalate.isPending}
