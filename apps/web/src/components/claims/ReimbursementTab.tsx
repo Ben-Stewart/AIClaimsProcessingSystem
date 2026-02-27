@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle, XCircle, ShieldAlert } from 'lucide-react';
-import { ApproveClaimSchema, ApproveClaimInput, DenyClaimSchema, DenyClaimInput, RiskLevel, type Claim } from '@claims/shared';
+import { ApproveClaimSchema, ApproveClaimInput, DenyClaimSchema, DenyClaimInput, RiskLevel, ClaimStatus, type Claim } from '@claims/shared';
 import { api } from '@/lib/api';
 import { formatCurrency, formatConfidence, confidenceColor, cn } from '@/lib/utils';
 
@@ -86,7 +86,24 @@ export function ReimbursementTab({ claim }: { claim: Claim }) {
       </div>
 
       {/* Adjuster decision */}
-      {reimbursement.adjusterDecision ? (
+      {claim.status === ClaimStatus.PAID ? (
+        <div className="rounded-xl border bg-green-50 border-green-200 p-5 space-y-2">
+          <p className="text-sm font-semibold text-green-700">Payment Processed</p>
+          <p className="text-2xl font-bold text-green-700">
+            {formatCurrency(reimbursement.adjusterDecision ?? reimbursement.recommendedAmount)}
+          </p>
+          {reimbursement.adjusterRationale && (
+            <p className="text-sm text-muted-foreground">{reimbursement.adjusterRationale}</p>
+          )}
+        </div>
+      ) : claim.status === ClaimStatus.DENIED ? (
+        <div className="rounded-xl border bg-red-50 border-red-200 p-5 space-y-2">
+          <p className="text-sm font-semibold text-red-700">Claim Denied</p>
+          {claim.adjusterNotes && (
+            <p className="text-sm text-muted-foreground">{claim.adjusterNotes}</p>
+          )}
+        </div>
+      ) : reimbursement.adjusterDecision ? (
         <div className="rounded-xl border bg-green-50 border-green-200 p-5 space-y-2">
           <p className="text-sm font-semibold text-green-700">Reimbursement Approved</p>
           <p className="text-2xl font-bold text-green-700">{formatCurrency(reimbursement.adjusterDecision)}</p>

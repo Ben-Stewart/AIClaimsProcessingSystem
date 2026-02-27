@@ -198,12 +198,15 @@ claimsRouter.get('/:id/timeline', async (req: Request, res: Response, next: Next
   }
 });
 
+const TERMINAL_STATUSES = [ClaimStatus.APPROVED, ClaimStatus.DENIED, ClaimStatus.PAID, ClaimStatus.CLOSED];
+
 // POST /api/claims/:id/approve
 claimsRouter.post('/:id/approve', authorize(UserRole.ADJUSTER, UserRole.SUPERVISOR, UserRole.ADMIN), validateBody(ApproveClaimSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { amount, notes } = req.body;
     const claim = await prisma.claim.findUnique({ where: { id: req.params.id } });
     if (!claim) throw new AppError(404, 'Claim not found', 'NOT_FOUND');
+    if (TERMINAL_STATUSES.includes(claim.status)) throw new AppError(400, 'Claim is already in a terminal state', 'INVALID_STATE');
 
     const [updatedClaim] = await prisma.$transaction([
       prisma.claim.update({
@@ -247,6 +250,7 @@ claimsRouter.post('/:id/deny', authorize(UserRole.ADJUSTER, UserRole.SUPERVISOR,
     const { reason, notes } = req.body;
     const claim = await prisma.claim.findUnique({ where: { id: req.params.id } });
     if (!claim) throw new AppError(404, 'Claim not found', 'NOT_FOUND');
+    if (TERMINAL_STATUSES.includes(claim.status)) throw new AppError(400, 'Claim is already in a terminal state', 'INVALID_STATE');
 
     const updated = await prisma.claim.update({
       where: { id: req.params.id },
