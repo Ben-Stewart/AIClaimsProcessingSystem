@@ -198,7 +198,7 @@ claimsRouter.get('/:id/timeline', async (req: Request, res: Response, next: Next
   }
 });
 
-const TERMINAL_STATUSES = [ClaimStatus.APPROVED, ClaimStatus.DENIED, ClaimStatus.PAID, ClaimStatus.CLOSED];
+const TERMINAL_STATUSES: string[] = [ClaimStatus.APPROVED, ClaimStatus.DENIED, ClaimStatus.PAID, ClaimStatus.CLOSED];
 
 // POST /api/claims/:id/approve
 claimsRouter.post('/:id/approve', authorize(UserRole.ADJUSTER, UserRole.SUPERVISOR, UserRole.ADMIN), validateBody(ApproveClaimSchema), async (req: Request, res: Response, next: NextFunction) => {
