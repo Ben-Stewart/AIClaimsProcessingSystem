@@ -55,6 +55,9 @@ export function AssessmentTab({ claim }: { claim: Claim }) {
           <p className={cn('text-2xl font-bold', confidenceColor(assessment.overallConfidence))}>
             {formatConfidence(assessment.overallConfidence)}
           </p>
+          <p className="text-xs text-muted-foreground italic">
+            How certain the AI is that its coverage determination is correct.
+          </p>
           {assessment.confidenceRationale && (
             <p className="text-sm text-muted-foreground">{assessment.confidenceRationale}</p>
           )}
@@ -80,7 +83,10 @@ export function AssessmentTab({ claim }: { claim: Claim }) {
       {/* Treatment Areas */}
       {Array.isArray(assessment.treatmentCategories) && assessment.treatmentCategories.length > 0 && (
         <div className="space-y-3">
-          <h2 className="font-semibold text-sm">Treatment Areas</h2>
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-semibold text-sm">Treatment Areas</h2>
+            <span className="text-xs text-muted-foreground italic">Coverage match confidence</span>
+          </div>
           <div className="space-y-2">
             {(assessment.treatmentCategories as Array<{ category: string; description: string; confidence: number }>).map((cat, i) => (
               <div key={i} className="rounded-lg border bg-card p-4 space-y-1">
