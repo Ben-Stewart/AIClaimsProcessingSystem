@@ -14,6 +14,7 @@ import { DocumentsTab } from '@/components/claims/DocumentsTab';
 import { FraudTab } from '@/components/claims/FraudTab';
 import { AssessmentTab } from '@/components/claims/AssessmentTab';
 import { ReimbursementTab } from '@/components/claims/ReimbursementTab';
+import { AuditTab } from '@/components/claims/AuditTab';
 
 export function ClaimDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -70,6 +71,7 @@ export function ClaimDetailPage() {
     { path: 'assessment', label: 'AI Assessment' },
     { path: 'fraud', label: 'Fraud Risk' },
     { path: 'reimbursement', label: 'Reimbursement' },
+    { path: 'activity', label: 'Activity' },
   ];
 
   if (isLoading) {
@@ -192,6 +194,7 @@ export function ClaimDetailPage() {
           <Route path="assessment" element={<AssessmentTab claim={claim} />} />
           <Route path="fraud" element={<FraudTab claim={claim} />} />
           <Route path="reimbursement" element={<ReimbursementTab claim={claim} />} />
+          <Route path="activity" element={<AuditTab claimId={claim.id} />} />
           <Route path="*" element={<Navigate to="" replace />} />
         </Routes>
       </div>

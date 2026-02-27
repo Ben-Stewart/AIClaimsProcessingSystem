@@ -310,4 +310,11 @@ export interface DashboardMetrics {
   pendingAdjusterDecision: number;
   paidThisMonth: number;
   totalPaidAmount: number;
+  trends: {
+    totalClaims: number | null;
+    openClaims: number | null;
+    fraudFlagsToday: number | null;
+    pendingAdjusterDecision: number | null;
+    paidThisMonth: number | null;
+  };
 }

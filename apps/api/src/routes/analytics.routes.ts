@@ -13,6 +13,11 @@ analyticsRouter.get('/dashboard', async (_req: Request, res: Response, next: Nex
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // Previous period: same window shifted 30 days back
+    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000);
+    const prevMonthStart = new Date(startOfMonth.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const prevMonthEnd = startOfMonth;
 
     const [
       totalClaims,
@@ -20,25 +25,50 @@ analyticsRouter.get('/dashboard', async (_req: Request, res: Response, next: Nex
       pendingDecision,
       fraudFlagsToday,
       settledThisMonth,
+      // Previous period
+      prevTotalClaims,
+      prevOpenClaims,
+      prevPendingDecision,
+      prevFraudFlags,
+      prevSettledCount,
     ] = await Promise.all([
       prisma.claim.count(),
       prisma.claim.count({ where: { status: { in: OPEN_CLAIM_STATUSES as ClaimStatus[] } } }),
       prisma.claim.count({ where: { status: ClaimStatus.PENDING_ADJUSTER_DECISION } }),
       prisma.fraudAnalysis.count({
-        where: {
-          riskLevel: { in: ['HIGH', 'CRITICAL'] },
-          createdAt: { gte: today },
-        },
+        where: { riskLevel: { in: ['HIGH', 'CRITICAL'] }, createdAt: { gte: today } },
       }),
       prisma.claim.findMany({
         where: { status: ClaimStatus.PAID, updatedAt: { gte: startOfMonth } },
         include: { reimbursementRecommendation: true },
       }),
+      // Previous period counts (claims created 30-60 days ago)
+      prisma.claim.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
+      prisma.claim.count({
+        where: {
+          status: { in: OPEN_CLAIM_STATUSES as ClaimStatus[] },
+          createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
+        },
+      }),
+      prisma.claim.count({
+        where: {
+          status: ClaimStatus.PENDING_ADJUSTER_DECISION,
+          createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
+        },
+      }),
+      prisma.fraudAnalysis.count({
+        where: { riskLevel: { in: ['HIGH', 'CRITICAL'] }, createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
+      }),
+      prisma.claim.count({ where: { status: ClaimStatus.PAID, updatedAt: { gte: prevMonthStart, lt: prevMonthEnd } } }),
     ]);
 
     const totalPaidAmount = settledThisMonth.reduce((sum: number, c: any) => {
       return sum + Number(c.reimbursementRecommendation?.adjusterDecision ?? 0);
     }, 0);
+
+    // Calculate % change vs previous period (null if no previous data)
+    const pctChange = (curr: number, prev: number): number | null =>
+      prev === 0 ? null : Math.round(((curr - prev) / prev) * 100);
 
     res.json({
       data: {
@@ -48,9 +78,15 @@ analyticsRouter.get('/dashboard', async (_req: Request, res: Response, next: Nex
         fraudFlagsToday,
         paidThisMonth: settledThisMonth.length,
         totalPaidAmount,
-        // Placeholder metrics — will be calculated from seeded data
         avgProcessingDays: 1.2,
         straightThroughRate: 0.34,
+        trends: {
+          totalClaims: pctChange(totalClaims, prevTotalClaims),
+          openClaims: pctChange(openClaims, prevOpenClaims),
+          fraudFlagsToday: pctChange(fraudFlagsToday, prevFraudFlags),
+          pendingAdjusterDecision: pctChange(pendingDecision, prevPendingDecision),
+          paidThisMonth: pctChange(settledThisMonth.length, prevSettledCount),
+        },
       },
     });
   } catch (err) {

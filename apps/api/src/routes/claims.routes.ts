@@ -28,7 +28,7 @@ claimsRouter.use(authenticate);
 // GET /api/claims
 claimsRouter.get('/', validateQuery(ClaimsQuerySchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { status, serviceType, adjusterId, page, limit, search } = req.query as any;
+    const { status, serviceType, adjusterId, page, limit, search, sortBy, sortDir } = req.query as any;
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = {};
@@ -53,7 +53,7 @@ claimsRouter.get('/', validateQuery(ClaimsQuerySchema), async (req: Request, res
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sortBy ?? 'createdAt']: sortDir ?? 'desc' },
         include: {
           policy: { select: { policyNumber: true, holderName: true } },
           adjuster: { select: { id: true, name: true } },
