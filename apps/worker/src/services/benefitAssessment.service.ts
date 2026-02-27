@@ -22,6 +22,9 @@ export async function runBenefitAssessment(claimId: string): Promise<void> {
     data: d.extractedData,
   }));
 
+  const rcLimits = claim.policy.reasonableAndCustomary as Record<string, number>;
+  const rcLimit = rcLimits[claim.serviceType];
+
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [
@@ -35,6 +38,8 @@ export async function runBenefitAssessment(claimId: string): Promise<void> {
         content: `Claim type: ${claim.serviceType}
 ${claim.serviceDescription ? `Description: ${claim.serviceDescription}\n` : ''}Policy coverage limit: $${claim.policy.coverageLimit}
 Deductible: $${claim.policy.deductible}
+
+Reasonable & customary (R&C) limit for ${claim.serviceType}: ${rcLimit != null ? `$${rcLimit} per session` : 'not specified for this service type'}
 
 Extracted document data:
 ${JSON.stringify(documentSummaries, null, 2)}
@@ -53,7 +58,7 @@ Return JSON with the following fields:
     "medicalNecessity": boolean,
     "medicalNecessityRationale": "1-2 sentences: is this specific treatment warranted for the stated condition? Consider clinical appropriateness (e.g. physiotherapy for herniated disk = warranted; massage for relaxation = not warranted under most plans)",
     "amountReasonableness": "WITHIN_RANGE|ELEVATED|EXCESSIVE",
-    "amountReasonablenessRationale": "1-2 sentences: is the claimed amount reasonable for this service type? Reference typical cost ranges for this treatment."
+    "amountReasonablenessRationale": "Using the R&C limit provided above, state the R&C limit, the claimed amount, the multiple (claimed ÷ R&C), and classify as WITHIN_RANGE (≤1×), ELEVATED (1–2.5×), or EXCESSIVE (>2.5×)."
   }
 }`,
       },
