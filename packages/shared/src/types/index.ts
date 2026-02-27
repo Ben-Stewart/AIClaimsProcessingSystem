@@ -158,6 +158,13 @@ export interface Document {
   createdAt: string;
 }
 
+export interface CoverageEndorsements {
+  medicalNecessity: boolean;
+  medicalNecessityRationale: string;
+  amountReasonableness: 'WITHIN_RANGE' | 'ELEVATED' | 'EXCESSIVE';
+  amountReasonablenessRationale: string;
+}
+
 export interface AIAssessment {
   id: string;
   claimId: string;
@@ -170,6 +177,7 @@ export interface AIAssessment {
   overallConfidence: number;
   severityRationale: string | null;
   confidenceRationale: string | null;
+  applicableEndorsements: CoverageEndorsements | null;
   processingTimeMs: number;
   createdAt: string;
 }
