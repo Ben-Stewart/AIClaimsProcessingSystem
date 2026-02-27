@@ -131,6 +131,19 @@ export async function runFraudDetection(claimId: string): Promise<void> {
     }
   }
 
+  // ─── Provider directory verification ─────────────────────────
+  if (claimedProvider?.name && (claimedProvider.address || claimedProvider.phone)) {
+    try {
+      const directorySignals = await verifyProviderDetails(
+        claimedProvider as { name: string; address?: string; phone?: string },
+        claim.serviceType,
+      );
+      signals.push(...directorySignals);
+    } catch {
+      // Skip silently — provider lookup failure must not break fraud detection
+    }
+  }
+
   // ─── Date inconsistency ───────────────────────────────────────
   const extractedDates = claim.documents
     .filter((d) => d.extractedData)
@@ -356,6 +369,81 @@ function getRecommendation(score: number): FraudRecommendation {
   if (score >= 0.7) return FraudRecommendation.ESCALATE_SIU;
   if (score >= 0.25) return FraudRecommendation.FLAG_FOR_REVIEW;
   return FraudRecommendation.APPROVE;
+}
+
+async function verifyProviderDetails(
+  provider: { name: string; address?: string; phone?: string },
+  serviceType: string,
+): Promise<FraudSignal[]> {
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You are a Canadian healthcare provider directory assistant for an employee benefits claims system. Given a provider name and service type, return 1–3 matching providers if found. Return JSON only.',
+      },
+      {
+        role: 'user',
+        content: `Search for: "${provider.name}" (${serviceType.toLowerCase().replace(/_/g, ' ')})
+Return JSON: { "results": [{ "name": string, "address": string, "phone": string }] }
+If no matching provider is found, return { "results": [] }`,
+      },
+    ],
+    response_format: { type: 'json_object' },
+    max_tokens: 300,
+  });
+
+  const { results = [] } = JSON.parse(response.choices[0]?.message?.content ?? '{}') as {
+    results: Array<{ name: string; address: string; phone: string }>;
+  };
+
+  if (results.length === 0) {
+    return [
+      {
+        factor: 'provider_details_unverified',
+        weight: 0.15,
+        description: `Provider "${provider.name}" could not be found in the healthcare provider directory`,
+      },
+    ];
+  }
+
+  const signals: FraudSignal[] = [];
+
+  if (provider.address) {
+    const addressMatched = results.some((r) => addressesMatch(r.address, provider.address!));
+    if (!addressMatched) {
+      signals.push({
+        factor: 'provider_details_unverified',
+        weight: 0.2,
+        description: `Provider "${provider.name}" found in directory but submitted address does not match any known listing`,
+      });
+    }
+  }
+
+  if (provider.phone) {
+    const phoneMatched = results.some((r) => normalizePhone(r.phone) === normalizePhone(provider.phone!));
+    if (!phoneMatched) {
+      signals.push({
+        factor: 'provider_details_unverified',
+        weight: 0.2,
+        description: `Provider "${provider.name}" found in directory but submitted phone number does not match any known listing`,
+      });
+    }
+  }
+
+  return signals;
+}
+
+function normalizePhone(phone: string): string {
+  return phone.replace(/\D/g, '');
+}
+
+function addressesMatch(a: string, b: string): boolean {
+  const norm = (s: string) => s.toLowerCase().replace(/[.,#]/g, '').replace(/\s+/g, ' ').trim();
+  const na = norm(a);
+  const nb = norm(b);
+  return na === nb || na.includes(nb) || nb.includes(na);
 }
 
 function namesMatch(a: string, b: string): boolean {
