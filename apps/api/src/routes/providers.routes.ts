@@ -1,13 +1,17 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import OpenAI from 'openai';
+import { ServiceType } from '@prisma/client';
 import { authenticate } from '../middleware/auth.js';
 import { env } from '../config/env.js';
+import { prisma } from '../config/database.js';
 
 export const providersRouter: Router = Router();
 
 providersRouter.use(authenticate);
 
 const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+
+const VALID_SERVICE_TYPES = new Set<string>(Object.values(ServiceType));
 
 // GET /api/providers/search?q=<name>&type=<serviceType>
 providersRouter.get('/search', async (req: Request, res: Response, next: NextFunction) => {
@@ -19,6 +23,26 @@ providersRouter.get('/search', async (req: Request, res: Response, next: NextFun
       return;
     }
 
+    const serviceType = typeof type === 'string' && VALID_SERVICE_TYPES.has(type)
+      ? (type as ServiceType)
+      : undefined;
+
+    // ── Cache-first: check DB before calling GPT ──────────────────
+    const cached = await prisma.provider.findMany({
+      where: {
+        name: { contains: q.trim(), mode: 'insensitive' },
+        ...(serviceType && { serviceType }),
+      },
+      take: 3,
+      orderBy: { createdAt: 'asc' },
+    });
+
+    if (cached.length > 0) {
+      res.json({ data: cached.map((p) => ({ name: p.name, address: p.address, phone: p.phone })) });
+      return;
+    }
+
+    // ── Cache miss: generate with GPT then persist ─────────────────
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -56,7 +80,22 @@ Match providers plausibly located in Canada. Include appropriate credentials in 
       results?: Array<{ name: string; address: string; phone: string }>;
     };
 
-    res.json({ data: parsed.results ?? [] });
+    const results = parsed.results ?? [];
+
+    // Persist each result so future searches are consistent
+    if (serviceType && results.length > 0) {
+      await Promise.allSettled(
+        results.map((r) =>
+          prisma.provider.upsert({
+            where: { name_serviceType: { name: r.name, serviceType } },
+            update: {},
+            create: { name: r.name, serviceType, address: r.address, phone: r.phone },
+          }),
+        ),
+      );
+    }
+
+    res.json({ data: results });
   } catch (err) {
     next(err);
   }

@@ -267,6 +267,18 @@ model Payment {
   @@map("payments")
 }
 
+model Provider {
+  id          String      @id @default(cuid())
+  name        String
+  serviceType ServiceType
+  address     String
+  phone       String
+  createdAt   DateTime    @default(now())
+
+  @@unique([name, serviceType])
+  @@map("providers")
+}
+
 model AuditEvent {
   id        String   @id @default(cuid())
   claimId   String

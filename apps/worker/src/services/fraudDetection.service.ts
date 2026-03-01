@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { RiskLevel, FraudRecommendation, RISK_THRESHOLDS } from '@claims/shared';
-import { Prisma } from '@prisma/client';
+import { Prisma, ServiceType } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import { env } from '../config/env.js';
 
@@ -375,30 +375,59 @@ async function verifyProviderDetails(
   provider: { name: string; address?: string; phone?: string },
   serviceType: string,
 ): Promise<FraudSignal[]> {
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content:
-          'You are a Canadian healthcare provider directory assistant for an employee benefits claims system. Given a provider name and service type, return 1–3 matching providers if found. Return JSON only.',
-      },
-      {
-        role: 'user',
-        content: `Search for: "${provider.name}" (${serviceType.toLowerCase().replace(/_/g, ' ')})
-Return JSON: { "results": [{ "name": string, "address": string, "phone": string }] }
-If no matching provider is found, return { "results": [] }`,
-      },
-    ],
-    response_format: { type: 'json_object' },
-    max_tokens: 300,
+  const validServiceType = Object.values(ServiceType).includes(serviceType as ServiceType)
+    ? (serviceType as ServiceType)
+    : undefined;
+
+  // ── Cache-first: check DB before calling GPT ──────────────────
+  let directoryResults = await prisma.provider.findMany({
+    where: {
+      name: { contains: provider.name, mode: 'insensitive' },
+      ...(validServiceType && { serviceType: validServiceType }),
+    },
+    take: 3,
   });
 
-  const { results = [] } = JSON.parse(response.choices[0]?.message?.content ?? '{}') as {
-    results: Array<{ name: string; address: string; phone: string }>;
-  };
+  // ── Cache miss: generate with GPT then persist ─────────────────
+  if (directoryResults.length === 0) {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are a Canadian healthcare provider directory assistant for an employee benefits claims system. Given a provider name and service type, return 1–3 matching providers if found. Return JSON only.',
+        },
+        {
+          role: 'user',
+          content: `Search for: "${provider.name}" (${serviceType.toLowerCase().replace(/_/g, ' ')})
+Return JSON: { "results": [{ "name": string, "address": string, "phone": string }] }
+If no matching provider is found, return { "results": [] }`,
+        },
+      ],
+      response_format: { type: 'json_object' },
+      max_tokens: 300,
+    });
 
-  if (results.length === 0) {
+    const { results = [] } = JSON.parse(response.choices[0]?.message?.content ?? '{}') as {
+      results: Array<{ name: string; address: string; phone: string }>;
+    };
+
+    if (validServiceType && results.length > 0) {
+      await Promise.allSettled(
+        results.map((r) =>
+          prisma.provider.upsert({
+            where: { name_serviceType: { name: r.name, serviceType: validServiceType } },
+            update: {},
+            create: { name: r.name, serviceType: validServiceType, address: r.address, phone: r.phone },
+          }),
+        ),
+      );
+      directoryResults = results.map((r) => ({ ...r, id: '', serviceType: validServiceType, createdAt: new Date() }));
+    }
+  }
+
+  if (directoryResults.length === 0) {
     return [
       {
         factor: 'provider_details_unverified',
@@ -411,7 +440,7 @@ If no matching provider is found, return { "results": [] }`,
   const signals: FraudSignal[] = [];
 
   if (provider.address) {
-    const addressMatched = results.some((r) => addressesMatch(r.address, provider.address!));
+    const addressMatched = directoryResults.some((r) => addressesMatch(r.address, provider.address!));
     if (!addressMatched) {
       signals.push({
         factor: 'provider_details_unverified',
@@ -422,7 +451,7 @@ If no matching provider is found, return { "results": [] }`,
   }
 
   if (provider.phone) {
-    const phoneMatched = results.some((r) => normalizePhone(r.phone) === normalizePhone(provider.phone!));
+    const phoneMatched = directoryResults.some((r) => normalizePhone(r.phone) === normalizePhone(provider.phone!));
     if (!phoneMatched) {
       signals.push({
         factor: 'provider_details_unverified',
