@@ -25,6 +25,44 @@ const STATUS_ICON = {
   [ExtractionStatus.FAILED]: <AlertCircle className="h-4 w-4 text-red-500" />,
 };
 
+function renderValue(value: unknown): React.ReactNode {
+  if (value === null || value === undefined) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return <span className="text-muted-foreground">None</span>;
+    }
+    if (typeof value[0] === 'object' && value[0] !== null) {
+      return (
+        <ul className="space-y-1">
+          {(value as Array<Record<string, unknown>>).map((item, i) => (
+            <li key={i} className="flex justify-between gap-4">
+              <span>{String(item.description ?? item.name ?? JSON.stringify(item))}</span>
+              {item.amount != null && (
+                <span className="font-medium tabular-nums shrink-0">
+                  ${Number(item.amount).toFixed(2)}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    return (
+      <ul className="space-y-0.5">
+        {(value as string[]).map((s, i) => (
+          <li key={i}>{String(s)}</li>
+        ))}
+      </ul>
+    );
+  }
+  return String(value);
+}
+
 export function DocumentsTab({ claimId }: { claimId: string }) {
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -158,9 +196,9 @@ export function DocumentsTab({ claimId }: { claimId: string }) {
                 </div>
                 <div className="divide-y">
                   {Object.entries(selectedDoc.extractedData).map(([key, value]) => (
-                    <div key={key} className="grid grid-cols-2 gap-4 px-4 py-3">
+                    <div key={key} className="grid grid-cols-2 gap-4 px-4 py-3 items-start">
                       <span className="text-xs text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                      <span className="text-sm break-words">{String(value)}</span>
+                      <div className="text-sm break-words">{renderValue(value)}</div>
                     </div>
                   ))}
                 </div>

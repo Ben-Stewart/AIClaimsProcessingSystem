@@ -1,8 +1,28 @@
 import { useQuery } from '@tanstack/react-query';
-import { FileText, AlertTriangle, TrendingDown, CheckCircle } from 'lucide-react';
+import { FileText, AlertTriangle, TrendingDown, CheckCircle, TrendingUp, Minus } from 'lucide-react';
 import { api } from '@/lib/api';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import type { DashboardMetrics, ApiResponse } from '@claims/shared';
+
+function TrendBadge({ pct, invert = false }: { pct: number | null | undefined; invert?: boolean }) {
+  if (pct === null || pct === undefined) return null;
+  if (pct === 0) return (
+    <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+      <Minus className="h-3 w-3" /> 0%
+    </span>
+  );
+  // invert=true means a higher number is bad (e.g. fraud flags, pending)
+  const isGood = invert ? pct < 0 : pct > 0;
+  return (
+    <span className={cn('flex items-center gap-0.5 text-xs font-medium', isGood ? 'text-green-600' : 'text-red-500')}>
+      {pct > 0
+        ? <TrendingUp className="h-3 w-3" />
+        : <TrendingDown className="h-3 w-3" />
+      }
+      {pct > 0 ? '+' : ''}{pct}% vs last 30d
+    </span>
+  );
+}
 
 function KPICard({
   title,
@@ -10,12 +30,16 @@ function KPICard({
   subtitle,
   icon: Icon,
   color = 'text-primary',
+  trend,
+  invertTrend,
 }: {
   title: string;
   value: string | number;
   subtitle?: string;
   icon: React.ElementType;
   color?: string;
+  trend?: number | null;
+  invertTrend?: boolean;
 }) {
   return (
     <div className="rounded-xl border bg-card p-6 space-y-2">
@@ -24,7 +48,10 @@ function KPICard({
         <Icon className={`h-4 w-4 ${color}`} />
       </div>
       <p className="text-2xl font-bold">{value}</p>
-      {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+      <div className="flex items-center justify-between gap-2">
+        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+        <TrendBadge pct={trend} invert={invertTrend} />
+      </div>
     </div>
   );
 }
@@ -63,6 +90,7 @@ export function DashboardPage() {
           value={metrics?.totalClaims ?? '—'}
           subtitle={`${metrics?.openClaims ?? 0} open`}
           icon={FileText}
+          trend={metrics?.trends?.totalClaims}
         />
         <KPICard
           title="Pending Decision"
@@ -70,6 +98,8 @@ export function DashboardPage() {
           subtitle="Ready for adjuster review"
           icon={CheckCircle}
           color="text-yellow-500"
+          trend={metrics?.trends?.pendingAdjusterDecision}
+          invertTrend
         />
         <KPICard
           title="Fraud Flags Today"
@@ -77,6 +107,8 @@ export function DashboardPage() {
           subtitle="High/critical risk"
           icon={AlertTriangle}
           color="text-red-500"
+          trend={metrics?.trends?.fraudFlagsToday}
+          invertTrend
         />
         <KPICard
           title="Avg Processing Time"
@@ -97,6 +129,7 @@ export function DashboardPage() {
           value={metrics?.paidThisMonth ?? '—'}
           subtitle={metrics ? formatCurrency(metrics.totalPaidAmount) : ''}
           icon={FileText}
+          trend={metrics?.trends?.paidThisMonth}
         />
       </div>
     </div>

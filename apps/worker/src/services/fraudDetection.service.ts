@@ -358,6 +358,7 @@ function getRecommendation(score: number): FraudRecommendation {
   return FraudRecommendation.APPROVE;
 }
 
+
 function namesMatch(a: string, b: string): boolean {
   const norm = (s: string) => s.toLowerCase().replace(/[.,]/g, '').trim();
   const na = norm(a);

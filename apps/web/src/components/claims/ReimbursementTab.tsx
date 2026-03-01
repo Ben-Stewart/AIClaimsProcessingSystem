@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle, XCircle } from 'lucide-react';
-import { ApproveClaimSchema, ApproveClaimInput, DenyClaimSchema, DenyClaimInput, type Claim } from '@claims/shared';
+import { CheckCircle, XCircle, ShieldAlert } from 'lucide-react';
+import { ApproveClaimSchema, ApproveClaimInput, DenyClaimSchema, DenyClaimInput, RiskLevel, ClaimStatus, type Claim } from '@claims/shared';
 import { api } from '@/lib/api';
 import { formatCurrency, formatConfidence, confidenceColor, cn } from '@/lib/utils';
 
@@ -36,6 +36,9 @@ export function ReimbursementTab({ claim }: { claim: Claim }) {
       </div>
     );
   }
+
+  const isHighFraudRisk = claim.fraudAnalysis?.riskLevel === RiskLevel.HIGH ||
+    claim.fraudAnalysis?.riskLevel === RiskLevel.CRITICAL;
 
   const range = reimbursement.rangeHigh - reimbursement.rangeLow;
   const recommendedPosition = range > 0
@@ -83,12 +86,89 @@ export function ReimbursementTab({ claim }: { claim: Claim }) {
       </div>
 
       {/* Adjuster decision */}
-      {reimbursement.adjusterDecision ? (
+      {claim.status === ClaimStatus.PAID ? (
+        <div className="rounded-xl border bg-green-50 border-green-200 p-5 space-y-2">
+          <p className="text-sm font-semibold text-green-700">Payment Processed</p>
+          <p className="text-2xl font-bold text-green-700">
+            {formatCurrency(reimbursement.adjusterDecision ?? reimbursement.recommendedAmount)}
+          </p>
+          {reimbursement.adjusterRationale && (
+            <p className="text-sm text-muted-foreground">{reimbursement.adjusterRationale}</p>
+          )}
+        </div>
+      ) : claim.status === ClaimStatus.DENIED ? (
+        <div className="rounded-xl border bg-red-50 border-red-200 p-5 space-y-2">
+          <p className="text-sm font-semibold text-red-700">Claim Denied</p>
+          {claim.adjusterNotes && (
+            <p className="text-sm text-muted-foreground">{claim.adjusterNotes}</p>
+          )}
+        </div>
+      ) : reimbursement.adjusterDecision ? (
         <div className="rounded-xl border bg-green-50 border-green-200 p-5 space-y-2">
           <p className="text-sm font-semibold text-green-700">Reimbursement Approved</p>
           <p className="text-2xl font-bold text-green-700">{formatCurrency(reimbursement.adjusterDecision)}</p>
           {reimbursement.adjusterRationale && (
             <p className="text-sm text-muted-foreground">{reimbursement.adjusterRationale}</p>
+          )}
+        </div>
+      ) : isHighFraudRisk ? (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-orange-300 bg-orange-50 p-4 flex items-start gap-3">
+            <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5 text-orange-600" />
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-orange-800">
+                Approval blocked — {claim.fraudAnalysis?.riskLevel === RiskLevel.CRITICAL ? 'Critical' : 'High'} fraud risk detected
+              </p>
+              <p className="text-sm text-orange-700">
+                This claim cannot be approved due to elevated fraud risk. You may decline the claim or escalate it to the Special Investigations Unit via the Fraud tab.
+              </p>
+            </div>
+          </div>
+
+          {!showDenyForm ? (
+            <button
+              type="button"
+              onClick={() => setShowDenyForm(true)}
+              className="flex items-center gap-2 rounded-md border px-4 py-2 text-sm hover:bg-muted transition-colors text-destructive"
+            >
+              <XCircle className="h-4 w-4" />
+              Deny Claim
+            </button>
+          ) : (
+            <form
+              onSubmit={denyForm.handleSubmit((d) => denyMutation.mutate(d))}
+              className="space-y-4 rounded-xl border border-destructive/30 bg-red-50 p-4"
+            >
+              <p className="text-sm font-medium text-red-700">Deny Claim</p>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Denial Reason</label>
+                <textarea
+                  rows={3}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                  placeholder="Provide a clear reason for denial..."
+                  {...denyForm.register('reason')}
+                />
+                {denyForm.formState.errors.reason && (
+                  <p className="text-xs text-destructive">{denyForm.formState.errors.reason.message}</p>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={denyMutation.isPending}
+                  className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  {denyMutation.isPending ? 'Denying...' : 'Confirm Denial'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDenyForm(false)}
+                  className="rounded-md border px-4 py-2 text-sm hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           )}
         </div>
       ) : (

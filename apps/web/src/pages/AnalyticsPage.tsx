@@ -68,9 +68,9 @@ export function AnalyticsPage() {
       </div>
 
       <div className="rounded-xl border bg-card p-6">
-        <h2 className="font-semibold text-sm mb-4">AI Assessment Summary</h2>
+        <h2 className="font-semibold text-sm mb-4">Coverage Assessment Summary</h2>
         <p className="text-3xl font-bold">{performanceData?.data.totalAssessments ?? 0}</p>
-        <p className="text-sm text-muted-foreground mt-1">Total AI assessments completed</p>
+        <p className="text-sm text-muted-foreground mt-1">Total coverage assessments completed</p>
       </div>
     </div>
   );

@@ -21,7 +21,6 @@ enum UserRole {
 
 enum ClaimStatus {
   FNOL_RECEIVED
-  DOCUMENTS_PENDING
   DOCUMENTS_UNDER_REVIEW
   AI_PROCESSING
   COVERAGE_VERIFIED
@@ -198,6 +197,8 @@ model AIAssessment {
   coverageReason       String
   applicableEndorsements Json         @default("[]")
   overallConfidence    Float
+  severityRationale    String?
+  confidenceRationale  String?
   processingTimeMs     Int
   modelVersions        Json           @default("{}")
 

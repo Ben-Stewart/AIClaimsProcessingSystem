@@ -2,8 +2,7 @@ import { ClaimStatus, RiskLevel } from '../types/index.js';
 
 // Claim status display labels
 export const CLAIM_STATUS_LABELS: Record<ClaimStatus, string> = {
-  [ClaimStatus.FNOL_RECEIVED]: 'FNOL Received',
-  [ClaimStatus.DOCUMENTS_PENDING]: 'Documents Pending',
+  [ClaimStatus.FNOL_RECEIVED]: 'Documents Required',
   [ClaimStatus.DOCUMENTS_UNDER_REVIEW]: 'Under Review',
   [ClaimStatus.AI_PROCESSING]: 'AI Processing',
   [ClaimStatus.COVERAGE_VERIFIED]: 'Coverage Verified',
@@ -20,7 +19,6 @@ export const CLAIM_STATUS_LABELS: Record<ClaimStatus, string> = {
 // Statuses where the claim is actively open/in-flight
 export const OPEN_CLAIM_STATUSES: ClaimStatus[] = [
   ClaimStatus.FNOL_RECEIVED,
-  ClaimStatus.DOCUMENTS_PENDING,
   ClaimStatus.DOCUMENTS_UNDER_REVIEW,
   ClaimStatus.AI_PROCESSING,
   ClaimStatus.COVERAGE_VERIFIED,

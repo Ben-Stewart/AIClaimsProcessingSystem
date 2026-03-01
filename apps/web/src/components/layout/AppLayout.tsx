@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, FileText, BarChart3, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
+import { NotificationCenter } from './NotificationCenter';
 
 const navLinkClass = (isActive: boolean) =>
   cn(
@@ -50,6 +51,7 @@ export function AppLayout() {
               <p className="truncate text-sm font-medium">{user?.name}</p>
               <p className="truncate text-xs text-muted-foreground">{user?.role}</p>
             </div>
+            <NotificationCenter />
             <button
               onClick={handleLogout}
               className="text-muted-foreground hover:text-foreground transition-colors"

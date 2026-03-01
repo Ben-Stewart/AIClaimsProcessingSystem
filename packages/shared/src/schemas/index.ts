@@ -82,6 +82,8 @@ export const ClaimsQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().optional(),
+  sortBy: z.enum(['createdAt', 'serviceDate', 'lossAmount', 'status']).optional().default('createdAt'),
+  sortDir: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
 export type ClaimsQueryInput = z.infer<typeof ClaimsQuerySchema>;

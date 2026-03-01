@@ -4,7 +4,6 @@
 
 export enum ClaimStatus {
   FNOL_RECEIVED = 'FNOL_RECEIVED',
-  DOCUMENTS_PENDING = 'DOCUMENTS_PENDING',
   DOCUMENTS_UNDER_REVIEW = 'DOCUMENTS_UNDER_REVIEW',
   AI_PROCESSING = 'AI_PROCESSING',
   COVERAGE_VERIFIED = 'COVERAGE_VERIFIED',
@@ -159,6 +158,13 @@ export interface Document {
   createdAt: string;
 }
 
+export interface CoverageEndorsements {
+  medicalNecessity: boolean;
+  medicalNecessityRationale: string;
+  amountReasonableness: 'WITHIN_RANGE' | 'ELEVATED' | 'EXCESSIVE';
+  amountReasonablenessRationale: string;
+}
+
 export interface AIAssessment {
   id: string;
   claimId: string;
@@ -169,6 +175,9 @@ export interface AIAssessment {
   coverageApplicable: boolean;
   coverageReason: string;
   overallConfidence: number;
+  severityRationale: string | null;
+  confidenceRationale: string | null;
+  applicableEndorsements: CoverageEndorsements | null;
   processingTimeMs: number;
   createdAt: string;
 }
@@ -310,4 +319,11 @@ export interface DashboardMetrics {
   pendingAdjusterDecision: number;
   paidThisMonth: number;
   totalPaidAmount: number;
+  trends: {
+    totalClaims: number | null;
+    openClaims: number | null;
+    fraudFlagsToday: number | null;
+    pendingAdjusterDecision: number | null;
+    paidThisMonth: number | null;
+  };
 }

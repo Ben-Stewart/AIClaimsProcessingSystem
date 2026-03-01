@@ -6,10 +6,10 @@ import { api } from '@/lib/api';
 import { formatDate, cn } from '@/lib/utils';
 import { ClaimStatus, CLAIM_STATUS_LABELS, DocumentType, type ApiResponse, type Claim } from '@claims/shared';
 import { getSocket } from '@/lib/socket';
+import { ClaimStatusStepper } from '@/components/claims/ClaimStatusStepper';
 
 const STATUS_COLORS: Record<ClaimStatus, string> = {
   [ClaimStatus.FNOL_RECEIVED]: 'bg-blue-100 text-blue-700',
-  [ClaimStatus.DOCUMENTS_PENDING]: 'bg-yellow-100 text-yellow-700',
   [ClaimStatus.DOCUMENTS_UNDER_REVIEW]: 'bg-yellow-100 text-yellow-700',
   [ClaimStatus.AI_PROCESSING]: 'bg-purple-100 text-purple-700',
   [ClaimStatus.COVERAGE_VERIFIED]: 'bg-blue-100 text-blue-700',
@@ -24,8 +24,7 @@ const STATUS_COLORS: Record<ClaimStatus, string> = {
 };
 
 const FRIENDLY_STATUS: Record<ClaimStatus, string> = {
-  [ClaimStatus.FNOL_RECEIVED]: 'Received — we\'ve got your claim',
-  [ClaimStatus.DOCUMENTS_PENDING]: 'Waiting for documents',
+  [ClaimStatus.FNOL_RECEIVED]: 'Please upload your supporting documents',
   [ClaimStatus.DOCUMENTS_UNDER_REVIEW]: 'Reviewing your documents',
   [ClaimStatus.AI_PROCESSING]: 'AI is analyzing your claim',
   [ClaimStatus.COVERAGE_VERIFIED]: 'Coverage confirmed',
@@ -107,7 +106,6 @@ export function ClientClaimDetailPage() {
   const needsInfo = claim.status === ClaimStatus.PENDING_ADDITIONAL_INFO;
   const isProcessing = [
     ClaimStatus.FNOL_RECEIVED,
-    ClaimStatus.DOCUMENTS_PENDING,
     ClaimStatus.DOCUMENTS_UNDER_REVIEW,
     ClaimStatus.AI_PROCESSING,
     ClaimStatus.COVERAGE_VERIFIED,
@@ -141,6 +139,11 @@ export function ClientClaimDetailPage() {
           <span className={cn('rounded-full px-3 py-1 text-sm font-medium shrink-0', STATUS_COLORS[claim.status])}>
             {CLAIM_STATUS_LABELS[claim.status]}
           </span>
+        </div>
+
+        {/* Progress stepper */}
+        <div className="pt-1 pb-2">
+          <ClaimStatusStepper status={claim.status} />
         </div>
 
         {/* Status message */}
