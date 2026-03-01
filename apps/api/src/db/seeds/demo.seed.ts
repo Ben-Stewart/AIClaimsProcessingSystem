@@ -107,35 +107,6 @@ async function main() {
 
   console.log(`  ${clientUser.email}  (CLIENT) → policy ${demoPolicy.policyNumber}`);
   console.log('Password for all: demo1234');
-
-  // Demo providers (from receipt test data)
-  const providers = await Promise.all([
-    prisma.provider.upsert({
-      where: { name_serviceType: { name: 'Dr. Felix Chu, MD', serviceType: 'MASSAGE_THERAPY' } },
-      update: {},
-      create: {
-        name: 'Dr. Felix Chu, MD',
-        serviceType: 'MASSAGE_THERAPY',
-        address: '123 Healthcare Rd, Toronto, ON, M4B 1B3',
-        phone: '(416) 555-1234',
-      },
-    }),
-    prisma.provider.upsert({
-      where: { name_serviceType: { name: 'Amy Thompson, PT', serviceType: 'PHYSIOTHERAPY' } },
-      update: {},
-      create: {
-        name: 'Amy Thompson, PT',
-        serviceType: 'PHYSIOTHERAPY',
-        address: '789 Clinic Ave, Vancouver, BC, V5X 1B2',
-        phone: '(604) 555-6789',
-      },
-    }),
-  ]);
-
-  console.log(`Seeded ${providers.length} demo providers:`);
-  for (const p of providers) {
-    console.log(`  ${p.name}  (${p.serviceType}) — ${p.address}`);
-  }
 }
 
 main()
